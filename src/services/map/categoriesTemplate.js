@@ -20,7 +20,7 @@ const categoriesTemplate =
             id: 2,
             categoryName: 'Category 3',
             categoryKey: 'category-3',
-            categoryImage: 'https://res.cloudinary.com/dq7aof6vb/image/upload/v1704676482/category-3rrr_yvi1nx.png',
+            categoryImage: 'https://res.cloudinary.com/dq7aof6vb/image/upload/v1738903473/Dise%C3%B1o_sin_t%C3%ADtulo__8_-removebg-preview_wwaldm.png',
             logos: []
           },
           {
