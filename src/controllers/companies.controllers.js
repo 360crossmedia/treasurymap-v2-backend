@@ -84,8 +84,17 @@ const deleteCompany = async (req, res) => {
       res.status(400).json({ message: "Company not found" });
     }
   } catch (error) {
-    console.log(error);
-    res.status(400).json(error);
+    next(error);
+  }
+};
+
+const companyHasMediaContent = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    const result = await CompaniesServices.hasRelatedContent(companyId);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -96,4 +105,5 @@ module.exports = {
   getCompanyData,
   upadateCompanyData,
   deleteCompany,
+  companyHasMediaContent,
 };
