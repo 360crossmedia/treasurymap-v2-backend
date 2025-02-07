@@ -1,5 +1,6 @@
-const { where } = require("sequelize");
 const Companies = require("../models/companies.models");
+const Articles = require("../models/articles.models");
+const Videos = require("../models/videos.models");
 
 class CompaniesServices {
   static async getOwnedService(userId) {
@@ -114,6 +115,25 @@ class CompaniesServices {
         },
       });
       return companies;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async hasRelatedContent(companyId) {
+    try {
+      // Verifica si hay artículos relacionados
+      const articlesCount = await Articles.count({
+        where: { companyId },
+      });
+
+      // Verifica si hay videos relacionados
+      const videosCount = await Videos.count({
+        where: { companyId },
+      });
+
+      // Si tiene artículos o videos, retorna true
+      return articlesCount > 0 || videosCount > 0;
     } catch (error) {
       throw error;
     }
