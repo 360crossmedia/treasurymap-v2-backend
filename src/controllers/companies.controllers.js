@@ -1,6 +1,6 @@
 const CompaniesServices = require("../services/companies.service");
 
-const getCompanyUserOwn = async (req, res) => {
+const getCompanyUserOwn = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const result = await CompaniesServices.getOwnedService(userId);
@@ -12,12 +12,11 @@ const getCompanyUserOwn = async (req, res) => {
         .json({ message: "Not companies found. Controller response" });
     }
   } catch (error) {
-    console.log(error);
-    res.status(400).json(error);
+    next(error);
   }
 };
 
-const createUserCompany = async (req, res) => {
+const createUserCompany = async (req, res, next) => {
   try {
     const data = req.body;
     const result = await CompaniesServices.createCompanyService(data);
@@ -27,12 +26,11 @@ const createUserCompany = async (req, res) => {
       res.status(400).json({ message: "Not created. Controller response" });
     }
   } catch (error) {
-    console.log(error);
-    res.status(400).json(error);
+    next(error);
   }
 };
 
-const getAllCompanies = async (req, res) => {
+const getAllCompanies = async (req, res, next) => {
   try {
     const result = await CompaniesServices.getAllCompaniesServices();
     if (result) {
@@ -41,12 +39,11 @@ const getAllCompanies = async (req, res) => {
       res.status(400).json({ message: "GetAll companies not found" });
     }
   } catch (error) {
-    console.log(error);
-    res.status(400).json(error);
+    next(error);
   }
 };
 
-const getCompanyData = async (req, res) => {
+const getCompanyData = async (req, res, next) => {
   try {
     const { companyId } = req.params;
     const result = await CompaniesServices.getCompanyDataService(companyId);
@@ -56,8 +53,7 @@ const getCompanyData = async (req, res) => {
       res.status(400).json({ message: "Company not found" });
     }
   } catch (error) {
-    console.log(error);
-    res.status(400).json(error);
+    next(error);
   }
 };
 
@@ -74,7 +70,7 @@ const upadateCompanyData = async (req, res, next) => {
   }
 };
 
-const deleteCompany = async (req, res) => {
+const deleteCompany = async (req, res, next) => {
   try {
     const { companyId } = req.params;
     const result = await CompaniesServices.deleteCompany(companyId);
@@ -88,7 +84,7 @@ const deleteCompany = async (req, res) => {
   }
 };
 
-const companyHasMediaContent = async (req, res) => {
+const companyHasMediaContent = async (req, res, next) => {
   try {
     const { companyId } = req.params;
     const result = await CompaniesServices.hasRelatedContent(companyId);

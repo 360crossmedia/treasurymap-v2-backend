@@ -35,6 +35,7 @@ const Articles = db.define("articles", {
       model: "companies",
       key: "id",
     },
+    onDelete: "CASCADE",
   },
   tags: {
     type: DataTypes.ARRAY(DataTypes.STRING),

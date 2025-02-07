@@ -24,6 +24,7 @@ const Videos = db.define("videos", {
       model: "companies",
       key: "id",
     },
+    onDelete: "CASCADE",
   },
   introduction: {
     type: DataTypes.STRING(500),
