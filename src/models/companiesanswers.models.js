@@ -20,6 +20,7 @@ const CompaniesAnswers = db.define("companies_answers", {
       model: "companies",
       key: "id",
     },
+    onDelete: "CASCADE",
   },
   questionId: {
     type: DataTypes.INTEGER,
