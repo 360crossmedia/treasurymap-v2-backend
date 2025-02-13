@@ -1,5 +1,5 @@
 const SubOptions = require("../models/suboptions.models");
-const CompanyCategorySubOption = require("../models/companyCategorySubOption");
+const CompanyCategorySubOption = require("../models/companyCategorySubOption.models");
 
 class SubOptionsServices {
   static async getAllSubOptions() {
