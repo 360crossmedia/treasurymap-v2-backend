@@ -17,6 +17,15 @@ const SubOptions = db.define("sub_options", {
     type: DataTypes.BOOLEAN,
     field: "is_selected",
   },
+  companyId: {
+    type: DataTypes.INTEGER,
+    field: "company_id",
+    references: {
+      model: "companies",
+      key: "id",
+    },
+    onDelete: "CASCADE",
+  },
   categoryId: {
     type: DataTypes.INTEGER,
     field: "category_id",
