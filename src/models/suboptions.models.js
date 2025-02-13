@@ -13,6 +13,10 @@ const SubOptions = db.define("sub_options", {
     field: "name",
     allowNull: false,
   },
+  isSelected: {
+    type: DataTypes.BOOLEAN,
+    field: "is_selected",
+  },
   categoryId: {
     type: DataTypes.INTEGER,
     field: "category_id",
