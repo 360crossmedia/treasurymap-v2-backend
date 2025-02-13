@@ -8,6 +8,7 @@ const Countries = require("./countries.models");
 const Videos = require("./videos.models");
 const Articles = require("./articles.models");
 const MainPublication = require("./mainpublication.models");
+const SubOptions = require("./suboptions.models");
 
 const initModels = () => {
   Users;
@@ -20,6 +21,7 @@ const initModels = () => {
   Videos;
   Articles;
   MainPublication;
+  SubOptions;
 };
 
 module.exports = initModels;
