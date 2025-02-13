@@ -1,7 +1,6 @@
 const Companies = require("../models/companies.models");
 const Articles = require("../models/articles.models");
 const Videos = require("../models/videos.models");
-const CompanyCategorySubOption = require("../models/companyCategorySubOption");
 
 class CompaniesServices {
   static async getOwnedService(userId) {

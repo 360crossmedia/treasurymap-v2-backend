@@ -1,6 +1,6 @@
 const db = require("../utils/database");
 const { DataTypes } = require("sequelize");
-const CompanyCategorySubOption = require("./companyCategorySubOption");
+const CompanyCategorySubOption = require("./companyCategorySubOption.models");
 
 const Companies = db.define("companies", {
   id: {
