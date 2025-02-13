@@ -1,6 +1,7 @@
 const Companies = require("../models/companies.models");
 const Articles = require("../models/articles.models");
 const Videos = require("../models/videos.models");
+const CompanyCategorySubOption = require("../models/companyCategorySubOption");
 
 class CompaniesServices {
   static async getOwnedService(userId) {
@@ -54,11 +55,7 @@ class CompaniesServices {
       const company = await Companies.findOne({
         where: { id: companyId },
       });
-      if (company) {
-        return company;
-      } else {
-        return false;
-      }
+      return company;
     } catch (error) {
       throw error;
     }

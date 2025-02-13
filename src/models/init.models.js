@@ -9,6 +9,7 @@ const Videos = require("./videos.models");
 const Articles = require("./articles.models");
 const MainPublication = require("./mainpublication.models");
 const SubOptions = require("./suboptions.models");
+const CompanyCategorySubOption = require("./CompanyCategorySubOption");
 
 const initModels = () => {
   Users;
@@ -22,6 +23,7 @@ const initModels = () => {
   Articles;
   MainPublication;
   SubOptions;
+  CompanyCategorySubOption;
 };
 
 module.exports = initModels;

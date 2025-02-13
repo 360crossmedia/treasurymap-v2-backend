@@ -1,5 +1,6 @@
 const db = require("../utils/database");
 const { DataTypes } = require("sequelize");
+const CompanyCategorySubOption = require("./companyCategorySubOption");
 
 const Companies = db.define("companies", {
   id: {
@@ -87,6 +88,11 @@ const Companies = db.define("companies", {
     defaultValue: false,
     field: "multiplayer_map",
   },
+});
+
+Companies.hasMany(CompanyCategorySubOption, {
+  foreignKey: "categoryId",
+  sourceKey: "id",
 });
 
 module.exports = Companies;

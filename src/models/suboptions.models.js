@@ -1,5 +1,6 @@
 const db = require("../utils/database");
 const { DataTypes } = require("sequelize");
+const CompanyCategorySubOption = require("./companyCategorySubOption");
 
 const SubOptions = db.define("sub_options", {
   id: {
@@ -12,19 +13,6 @@ const SubOptions = db.define("sub_options", {
     type: DataTypes.STRING,
     field: "name",
     allowNull: false,
-  },
-  isSelected: {
-    type: DataTypes.BOOLEAN,
-    field: "is_selected",
-  },
-  companyId: {
-    type: DataTypes.INTEGER,
-    field: "company_id",
-    references: {
-      model: "companies",
-      key: "id",
-    },
-    onDelete: "CASCADE",
   },
   categoryId: {
     type: DataTypes.INTEGER,
