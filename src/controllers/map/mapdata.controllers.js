@@ -21,7 +21,10 @@ const getMultiplayerMapData = async (req, res, next) => {
     companies.forEach((company) => {
       for (let i = 1; i <= 15; i++) {
         company.companyCategories.forEach((companyCategory) => {
-          if (companyCategory === i) {
+          if (
+            companyCategory === i &&
+            !categories[`category-${i}`].find((cat) => cat.id === company.id)
+          ) {
             categories[`category-${i}`].push({
               id: company.id,
               live: company.live,

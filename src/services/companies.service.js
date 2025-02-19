@@ -109,6 +109,7 @@ class CompaniesServices {
           multiplayerMap: true,
           live: true,
         },
+        attributes: ["companyCategories", "id", "logo", "name", "live"],
       });
       return companies;
     } catch (error) {
