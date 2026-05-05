@@ -14,6 +14,7 @@ const emailsRoutes = require("./emails.router.js");
 const mainPublicationRoutes = require("./mainPublication.router.js");
 const publicationsRoutes = require("./publications.router.js");
 const subOptionsRoutes = require("./subOptions.router.js");
+const longlistRoutes = require("./longlist.routes.js");
 const error = require("../middlewares/error.middleware");
 
 const routerApi = (app) => {
@@ -33,6 +34,7 @@ const routerApi = (app) => {
   app.use("/api/v1/mainPublications", mainPublicationRoutes, error);
   app.use("/api/v1/publications", publicationsRoutes, error);
   app.use("/api/v1/subOptions", subOptionsRoutes, error);
+  app.use("/api/v1/longlist", longlistRoutes, error);
 };
 
 module.exports = routerApi;
