@@ -79,7 +79,22 @@ function validatePayload({ email, companyName, answers, categoryIds }) {
 
 const generate = async (req, res, next) => {
   try {
-    const { email, companyName, answers, categoryIds } = req.body || {};
+    const { email, companyName, answers, categoryIds, website } = req.body || {};
+
+    // Honeypot : champ "website" caché côté front. Si rempli, c'est un bot.
+    // On répond 202 fake (le bot pense que ça a marché) sans rien faire — pas
+    // de DB, pas de Claude, pas de coût. On log pour stats.
+    if (website && String(website).trim().length > 0) {
+      console.log(
+        `[longlist] honeypot triggered (email=${String(email).slice(0, 50)}, ip=${req.ip}, website="${String(website).slice(0, 50)}")`
+      );
+      return res.status(202).json({
+        id: 0,
+        status: "pending",
+        message:
+          "Votre rapport est en cours de génération. Vous le recevrez par email dans quelques minutes.",
+      });
+    }
 
     const validationError = validatePayload({ email, companyName, answers, categoryIds });
     if (validationError) {
