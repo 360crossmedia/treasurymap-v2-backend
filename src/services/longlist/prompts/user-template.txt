@@ -1,0 +1,11 @@
+Today's month/year: {{MONTH_YEAR}}.
+
+CLIENT ANSWERS TO THE PROFILING QUESTIONS:
+
+{{ANSWERS_BLOCK}}
+
+SHORTLIST OF VENDORS PRESENT IN THE TREASURY TECHNOLOGY MAP FOR THE TICKED CATEGORIES:
+
+{{SHORTLIST_BLOCK}}
+
+Please produce my Long List report following the strict format defined in your instructions. Use ONLY the vendors listed in the SHORTLIST above.
