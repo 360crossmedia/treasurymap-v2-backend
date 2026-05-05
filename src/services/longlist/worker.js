@@ -65,9 +65,16 @@ async function processReport(reportId) {
     );
     return { ok: true, reportId, status: "sent", emailMode: emailResult.mode };
   } catch (err) {
-    console.error(`[longlist worker] report ${reportId} FAILED:`, err.message);
+    // Stack tronquée pour ne pas inonder les logs en cas d'erreur SDK profonde
+    const stack = err.stack ? err.stack.split("\n").slice(0, 6).join("\n") : "(no stack)";
+    console.error(
+      `[longlist worker] report ${reportId} FAILED: ${err.message}\n${stack}`
+    );
     await report
-      .update({ status: "failed", errorMessage: err.message })
+      .update({
+        status: "failed",
+        errorMessage: String(err.message).slice(0, 2000),
+      })
       .catch((e) =>
         console.error(`[longlist worker] update failed status itself failed:`, e.message)
       );

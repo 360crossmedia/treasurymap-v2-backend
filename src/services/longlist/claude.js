@@ -4,6 +4,12 @@ const Anthropic = require("@anthropic-ai/sdk");
 
 const MODEL = "claude-sonnet-4-6";
 const MAX_TOKENS = 16000;
+// Le SDK fait du retry exponentiel par défaut (max_retries=2) sur 429/5xx/connexion.
+// On monte à 3 pour absorber les pics de charge Anthropic.
+const MAX_RETRIES = 3;
+// La génération prend typiquement 4-5 min. On laisse 10 min de marge avant
+// d'abandonner (timeout réseau, pas un kill abrupt — le SDK retentera après).
+const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
 const SYSTEM_PROMPT = fs.readFileSync(
   path.join(__dirname, "prompts/system.txt"),
@@ -20,7 +26,7 @@ function client() {
     if (!process.env.ANTHROPIC_API_KEY) {
       throw new Error("ANTHROPIC_API_KEY manquante dans l'env");
     }
-    _client = new Anthropic();
+    _client = new Anthropic({ maxRetries: MAX_RETRIES, timeout: REQUEST_TIMEOUT_MS });
   }
   return _client;
 }
@@ -87,6 +93,16 @@ async function generateReport({ answers, shortlist }) {
     .filter((b) => b.type === "text")
     .map((b) => b.text)
     .join("");
+
+  if (!markdown || markdown.length < 500) {
+    // Si Claude refuse (stop_reason=refusal) ou produit trop peu, on bloque.
+    // L'envoi d'un PDF quasi-vide à un lead serait pire que de marquer failed.
+    throw new Error(
+      `Sortie Claude trop courte ou vide (${markdown.length} chars, stop_reason=${response.stop_reason})`
+    );
+  }
+  // stop_reason="max_tokens" est toléré : la sortie reste utilisable même
+  // tronquée (le rapport est progressif, les premières catégories sont entières).
 
   return {
     markdown,
