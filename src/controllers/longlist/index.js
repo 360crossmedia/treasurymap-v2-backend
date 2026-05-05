@@ -1,4 +1,5 @@
 const LongListReports = require("../../models/longlistReports.models");
+const worker = require("../../services/longlist/worker");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_CATEGORY_KEYS = [
@@ -36,7 +37,8 @@ const generate = async (req, res, next) => {
       status: "pending",
     });
 
-    // TODO commit suivant : déclencher le worker async ici
+    worker.enqueue(report.id);
+
     res.status(202).json({
       id: report.id,
       status: report.status,
