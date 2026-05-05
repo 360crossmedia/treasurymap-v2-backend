@@ -1,5 +1,6 @@
 const LongListReports = require("../../models/longlistReports.models");
 const worker = require("../../services/longlist/worker");
+const matching = require("../../services/longlist/matching");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_CATEGORY_KEYS = [
@@ -63,4 +64,13 @@ const getStatus = async (req, res, next) => {
   }
 };
 
-module.exports = { generate, getStatus, VALID_CATEGORY_KEYS };
+const listCategories = async (req, res, next) => {
+  try {
+    const cats = await matching.getAllCategories();
+    res.json({ categories: cats });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { generate, getStatus, listCategories, VALID_CATEGORY_KEYS };
