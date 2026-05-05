@@ -1,4 +1,5 @@
 const CompaniesServices = require("../services/companies.service");
+const { slugify } = require("../utils/slugify");
 
 const getCompanyUserOwn = async (req, res, next) => {
   try {
@@ -84,6 +85,24 @@ const deleteCompany = async (req, res, next) => {
   }
 };
 
+const getCompanyBySlug = async (req, res, next) => {
+  try {
+    const { slug } = req.params;
+    const all = await CompaniesServices.getAllCompaniesServices();
+    if (!Array.isArray(all)) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+    const match = all.find((c) => slugify(c.name) === slug);
+    if (!match) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+    const result = await CompaniesServices.getCompanyDataService(match.id);
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const companyHasMediaContent = async (req, res, next) => {
   try {
     const { companyId } = req.params;
@@ -99,6 +118,7 @@ module.exports = {
   createUserCompany,
   getAllCompanies,
   getCompanyData,
+  getCompanyBySlug,
   upadateCompanyData,
   deleteCompany,
   companyHasMediaContent,
