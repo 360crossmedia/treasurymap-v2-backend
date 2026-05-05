@@ -10,10 +10,12 @@ function isCredsAvailable() {
   return process.env.G_PASSWORD && process.env.G_PASSWORD !== "local-dev-noop";
 }
 
-function bodyText({ companyName }) {
+function bodyText({ companyName, pdfUrl }) {
   return `Hello,
 
-Your TreasuryMap Long List report is attached.
+Your TreasuryMap Long List report is attached.${
+    pdfUrl ? `\n\nYou can also access the report online here:\n${pdfUrl}` : ""
+  }
 
 This long list was generated based on your answers to the profiling questions${
     companyName ? ` for ${companyName}` : ""
@@ -29,9 +31,14 @@ www.treasurymap.com
 This is an automated message. Please do not reply directly.`;
 }
 
-function bodyHtml({ companyName }) {
+function bodyHtml({ companyName, pdfUrl }) {
   return `<p>Hello,</p>
 <p>Your <strong>TreasuryMap Long List</strong> report is attached.</p>
+${
+  pdfUrl
+    ? `<p>You can also <a href="${escapeHtml(pdfUrl)}" style="color:#094895;font-weight:600">access the report online</a>.</p>`
+    : ""
+}
 <p>This long list was generated based on your answers to the profiling questions${
     companyName ? ` for <strong>${escapeHtml(companyName)}</strong>` : ""
   }, and the providers currently listed in the Treasury Technology Map at <a href="https://www.treasurymap.com">www.treasurymap.com</a>.</p>
@@ -61,7 +68,7 @@ function escapeHtml(s) {
  * @param {string} opts.pdfPath - chemin local vers le PDF à attacher
  * @returns {Promise<{sent:boolean, mode:'smtp'|'fallback', messageId?:string, savedTo?:string}>}
  */
-async function sendReportEmail({ to, companyName, pdfPath }) {
+async function sendReportEmail({ to, companyName, pdfPath, pdfUrl = null }) {
   if (!to) throw new Error("to manquant");
   if (!pdfPath || !fs.existsSync(pdfPath)) {
     throw new Error(`pdfPath introuvable: ${pdfPath}`);
@@ -72,8 +79,8 @@ async function sendReportEmail({ to, companyName, pdfPath }) {
     from: FROM,
     to,
     subject,
-    text: bodyText({ companyName }),
-    html: bodyHtml({ companyName }),
+    text: bodyText({ companyName, pdfUrl }),
+    html: bodyHtml({ companyName, pdfUrl }),
     attachments: [
       {
         filename: "TreasuryMap-LongList.pdf",

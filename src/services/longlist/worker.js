@@ -2,6 +2,7 @@ const LongListReports = require("../../models/longlistReports.models");
 const matching = require("./matching");
 const claude = require("./claude");
 const pdf = require("./pdf");
+const cloudinary = require("./cloudinary");
 const email = require("./email");
 
 /**
@@ -38,19 +39,25 @@ async function processReport(reportId) {
       generationMs: result.generationMs,
     });
 
-    // 3. PDF
+    // 3. PDF (toujours sur disque local — utilisé pour la pièce jointe email)
     const pdfResult = await pdf.renderPdf({
       markdown: result.markdown,
       title: `TreasuryMap Long List${report.companyName ? ` — ${report.companyName}` : ""}`,
       fileName: `longlist-${report.id}.pdf`,
     });
-    await report.update({ pdfPath: pdfResult.path });
 
-    // 4. Email
+    // 4. Upload Cloudinary pour persistance long-terme (URL stockée en DB)
+    // En l'absence de creds, fallback silencieux sur le path local.
+    const cloudResult = await cloudinary.uploadPdf(pdfResult.path, { reportId: report.id });
+    const persistedPath = cloudResult.ok ? cloudResult.url : pdfResult.path;
+    await report.update({ pdfPath: persistedPath });
+
+    // 5. Email — pièce jointe (locale) + lien (Cloudinary si dispo, fallback local)
     const emailResult = await email.sendReportEmail({
       to: report.email,
       companyName: report.companyName,
       pdfPath: pdfResult.path,
+      pdfUrl: cloudResult.ok ? cloudResult.url : null,
     });
 
     await report.update({
@@ -59,8 +66,8 @@ async function processReport(reportId) {
     });
 
     console.log(
-      `[longlist worker] report ${reportId} OK (mode=${emailResult.mode}, ` +
-        `tokens=${result.usage?.input_tokens || 0}/${result.usage?.output_tokens || 0}, ` +
+      `[longlist worker] report ${reportId} OK (email=${emailResult.mode}, ` +
+        `cloud=${cloudResult.mode}, tokens=${result.usage?.input_tokens || 0}/${result.usage?.output_tokens || 0}, ` +
         `gen=${result.generationMs}ms, pdf=${(pdfResult.sizeBytes / 1024).toFixed(0)}KB)`
     );
     return { ok: true, reportId, status: "sent", emailMode: emailResult.mode };
