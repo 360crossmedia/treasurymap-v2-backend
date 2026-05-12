@@ -191,38 +191,43 @@ const HTML_TEMPLATE = `<!doctype html>
   .cover-meta { color: var(--ink-muted); font-size: 10pt; margin-top: 2pt; }
   .footer-disclaimer { color: var(--ink-muted); font-size: 9pt; margin-top: 18pt; padding-top: 8pt; border-top: 1px solid var(--line); font-style: italic; }
 
-  /* Cover banner — page 1 hero */
+  /* Cover banner — page 1 hero. On reste dans la zone imprimable (sans bleed
+     full-width) pour éviter le clip Chrome/puppeteer. Bordure cyan en haut +
+     coin arrondi en bas pour rester graphiquement fort sans déborder. */
   .cover-banner {
     background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
     color: #fff;
-    padding: 32pt 28pt 36pt 28pt;
-    margin: 0 -18mm 22pt -18mm;
-    border-bottom: 4pt solid var(--brand-dark);
+    padding: 32pt 30pt 36pt 30pt;
+    margin: 0 0 24pt 0;
+    border-radius: 10pt;
+    box-shadow: 0 4pt 18pt rgba(14, 116, 144, 0.18);
     page-break-after: avoid;
   }
   .cover-banner .cover-logo {
-    height: 26pt;
-    margin-bottom: 18pt;
+    height: 28pt;
+    margin-bottom: 20pt;
     filter: brightness(0) invert(1); /* logo en blanc sur fond cyan */
+    display: block;
   }
   .cover-banner h1 {
     color: #fff;
     margin: 0;
-    font-size: 26pt;
+    font-size: 28pt;
     letter-spacing: -0.6px;
+    line-height: 1.1;
   }
   .cover-banner .cover-subtitle {
-    color: rgba(255,255,255,0.85);
-    font-size: 12pt;
-    margin-top: 6pt;
+    color: rgba(255,255,255,0.92);
+    font-size: 13pt;
+    margin-top: 8pt;
     font-weight: 500;
     letter-spacing: 0.3pt;
   }
   .cover-banner .cover-tagline {
-    color: rgba(255,255,255,0.7);
+    color: rgba(255,255,255,0.78);
     font-size: 9.5pt;
-    margin-top: 14pt;
-    border-top: 1px solid rgba(255,255,255,0.25);
+    margin-top: 16pt;
+    border-top: 1px solid rgba(255,255,255,0.3);
     padding-top: 10pt;
     font-style: italic;
   }
