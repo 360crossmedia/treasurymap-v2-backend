@@ -4,6 +4,11 @@ const claude = require("./claude");
 const pdf = require("./pdf");
 const cloudinary = require("./cloudinary");
 const email = require("./email");
+const appendices = require("./appendices");
+
+// Public URL used by the appendices for deep links back to the TreasuryMap site.
+// Override via env in prod; fallback fits local dev.
+const SITE_URL = process.env.PUBLIC_SITE_URL || "https://treasurymap-v2-production.up.railway.app";
 
 /**
  * Pipeline : matching DB → Claude → PDF → email.
@@ -31,8 +36,21 @@ async function processReport(reportId) {
       answers: report.answers,
       shortlist,
     });
+
+    // 2b. Appendices déterministes : Vendor Directory + Further Reading
+    // Construits en local depuis la DB pour éviter les hallucinations Claude
+    // sur les URLs et garantir des liens cliquables vers le site.
+    const vendorDirectoryMd = appendices.buildVendorDirectory(shortlist, SITE_URL);
+    const furtherReadingMd = await appendices.buildFurtherReading(
+      report.categoryIds,
+      SITE_URL
+    );
+    const fullMarkdown = [result.markdown, vendorDirectoryMd, furtherReadingMd]
+      .filter(Boolean)
+      .join("\n\n");
+
     await report.update({
-      reportMd: result.markdown,
+      reportMd: fullMarkdown,
       modelUsed: result.model,
       inputTokens: result.usage?.input_tokens || null,
       outputTokens: result.usage?.output_tokens || null,
@@ -41,7 +59,7 @@ async function processReport(reportId) {
 
     // 3. PDF (toujours sur disque local — utilisé pour la pièce jointe email)
     const pdfResult = await pdf.renderPdf({
-      markdown: result.markdown,
+      markdown: fullMarkdown,
       title: `TreasuryMap Long List${report.companyName ? ` — ${report.companyName}` : ""}`,
       fileName: `longlist-${report.id}.pdf`,
     });
