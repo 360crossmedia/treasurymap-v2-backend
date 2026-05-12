@@ -25,6 +25,11 @@ async function processReport(reportId) {
     return { ok: false, reportId, status: "missing" };
   }
 
+  // Route les comparaisons vers leur pipeline dédié — short-circuit ici.
+  if (report.reportType === "comparison") {
+    return processComparison(report);
+  }
+
   try {
     await report.update({ status: "generating" });
 
@@ -108,6 +113,98 @@ async function processReport(reportId) {
 }
 
 /**
+ * Pipeline comparison : matching vendors par IDs → Claude (compare prompt)
+ * → PDF → email. Même structure que processReport mais entrée différente
+ * (un seul categoryId + liste vendorIds).
+ */
+async function processComparison(report) {
+  try {
+    await report.update({ status: "generating" });
+
+    const categoryId = report.categoryIds[0];
+    const { vendors, missingIds, wrongCatIds } = await matching.getVendorsByIdsInCategory(
+      report.vendorIds,
+      categoryId
+    );
+    if (vendors.length < 2) {
+      throw new Error(
+        `Pas assez de vendors valides pour comparer (got=${vendors.length}, missing=${missingIds}, wrong-category=${wrongCatIds})`
+      );
+    }
+    const [cat] = await matching.getCategoriesByIds([categoryId]);
+    const categoryName = cat?.name || `Category ${categoryId}`;
+
+    // Claude génère la comparaison
+    const result = await claude.generateComparison({
+      categoryName,
+      vendors,
+      context: report.answers?.context || "",
+    });
+
+    // Appendices : Vendor Directory restreint aux vendors comparés
+    const vendorDirectoryMd = appendices.buildVendorDirectory(
+      [{ categoryId, categoryName, providers: vendors }],
+      SITE_URL
+    );
+    const furtherReadingMd = await appendices.buildFurtherReading(
+      [categoryId],
+      SITE_URL
+    );
+    const fullMarkdown = [result.markdown, vendorDirectoryMd, furtherReadingMd]
+      .filter(Boolean)
+      .join("\n\n");
+
+    await report.update({
+      reportMd: fullMarkdown,
+      modelUsed: result.model,
+      inputTokens: result.usage?.input_tokens || null,
+      outputTokens: result.usage?.output_tokens || null,
+      generationMs: result.generationMs,
+    });
+
+    const pdfResult = await pdf.renderPdf({
+      markdown: fullMarkdown,
+      title: `TreasuryMap Vendor Comparison${report.companyName ? ` — ${report.companyName}` : ""}`,
+      fileName: `compare-${report.id}.pdf`,
+    });
+
+    const cloudResult = await cloudinary.uploadPdf(pdfResult.path, {
+      reportId: report.id,
+    });
+    const persistedPath = cloudResult.ok ? cloudResult.url : pdfResult.path;
+    await report.update({ pdfPath: persistedPath });
+
+    const emailResult = await email.sendReportEmail({
+      to: report.email,
+      companyName: report.companyName,
+      pdfPath: pdfResult.path,
+      pdfUrl: cloudResult.ok ? cloudResult.url : null,
+    });
+
+    await report.update({ status: "sent", emailedAt: new Date() });
+
+    console.log(
+      `[compare worker] report ${report.id} OK (vendors=${vendors.length}, email=${emailResult.mode}, ` +
+        `tokens=${result.usage?.input_tokens || 0}/${result.usage?.output_tokens || 0}, ` +
+        `gen=${result.generationMs}ms, pdf=${(pdfResult.sizeBytes / 1024).toFixed(0)}KB)`
+    );
+    return { ok: true, reportId: report.id, status: "sent", emailMode: emailResult.mode };
+  } catch (err) {
+    const stack = err.stack ? err.stack.split("\n").slice(0, 6).join("\n") : "(no stack)";
+    console.error(`[compare worker] report ${report.id} FAILED: ${err.message}\n${stack}`);
+    await report
+      .update({
+        status: "failed",
+        errorMessage: String(err.message).slice(0, 2000),
+      })
+      .catch((e) =>
+        console.error(`[compare worker] update failed status itself failed:`, e.message)
+      );
+    return { ok: false, reportId: report.id, status: "failed", error: err.message };
+  }
+}
+
+/**
  * Lance le worker en arrière-plan, sans attendre. Utile pour répondre 202
  * immédiatement à l'utilisateur sans bloquer la requête HTTP.
  */
@@ -119,4 +216,4 @@ function enqueue(reportId) {
   });
 }
 
-module.exports = { processReport, enqueue };
+module.exports = { processReport, processComparison, enqueue };

@@ -27,6 +27,20 @@ const LongListReports = db.define(
       field: "category_ids",
       defaultValue: [],
     },
+    // Type de rapport : "longlist" (parcours classique, 10 questions) ou
+    // "comparison" (Compare Tools : 2-5 vendors d'une même catégorie).
+    reportType: {
+      type: DataTypes.ENUM("longlist", "comparison"),
+      field: "report_type",
+      defaultValue: "longlist",
+      allowNull: false,
+    },
+    // Pour les comparisons : ids des vendors comparés (subset de la catégorie).
+    vendorIds: {
+      type: DataTypes.ARRAY(DataTypes.INTEGER),
+      field: "vendor_ids",
+      defaultValue: [],
+    },
     status: {
       type: DataTypes.ENUM("pending", "generating", "sent", "failed"),
       defaultValue: "pending",

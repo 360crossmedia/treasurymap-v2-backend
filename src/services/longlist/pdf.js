@@ -4,6 +4,21 @@ const os = require("os");
 const { marked } = require("marked");
 const puppeteer = require("puppeteer");
 
+// Inline le logo TreasuryMap (SVG) au démarrage du module : évite à puppeteer
+// d'avoir à charger un asset externe (network ou file://), ce qui fait foirer
+// le rendu en environnement sandboxé.
+const LOGO_SVG = (() => {
+  try {
+    return fs.readFileSync(
+      path.join(__dirname, "assets/treasurymap-logo.svg"),
+      "utf8"
+    );
+  } catch {
+    return "<!-- logo unavailable -->";
+  }
+})();
+const LOGO_DATA_URI = `data:image/svg+xml;utf8,${encodeURIComponent(LOGO_SVG)}`;
+
 // Style consultant TreasuryMap. Markdown → HTML via marked, puis wrap dans
 // un template HTML stylé, puis PDF via puppeteer (Chromium headless).
 const HTML_TEMPLATE = `<!doctype html>
@@ -175,9 +190,56 @@ const HTML_TEMPLATE = `<!doctype html>
 
   .cover-meta { color: var(--ink-muted); font-size: 10pt; margin-top: 2pt; }
   .footer-disclaimer { color: var(--ink-muted); font-size: 9pt; margin-top: 18pt; padding-top: 8pt; border-top: 1px solid var(--line); font-style: italic; }
+
+  /* Cover banner — page 1 hero */
+  .cover-banner {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: #fff;
+    padding: 32pt 28pt 36pt 28pt;
+    margin: 0 -18mm 22pt -18mm;
+    border-bottom: 4pt solid var(--brand-dark);
+    page-break-after: avoid;
+  }
+  .cover-banner .cover-logo {
+    height: 26pt;
+    margin-bottom: 18pt;
+    filter: brightness(0) invert(1); /* logo en blanc sur fond cyan */
+  }
+  .cover-banner h1 {
+    color: #fff;
+    margin: 0;
+    font-size: 26pt;
+    letter-spacing: -0.6px;
+  }
+  .cover-banner .cover-subtitle {
+    color: rgba(255,255,255,0.85);
+    font-size: 12pt;
+    margin-top: 6pt;
+    font-weight: 500;
+    letter-spacing: 0.3pt;
+  }
+  .cover-banner .cover-tagline {
+    color: rgba(255,255,255,0.7);
+    font-size: 9.5pt;
+    margin-top: 14pt;
+    border-top: 1px solid rgba(255,255,255,0.25);
+    padding-top: 10pt;
+    font-style: italic;
+  }
+
+  /* Hide the first markdown h1/h2 because they're duplicated by the banner */
+  body > h1:first-of-type { display: none; }
+  body > h1:first-of-type + h2 { display: none; }
+  body > h1:first-of-type + h2 + p { display: none; }
 </style>
 </head>
 <body>
+<div class="cover-banner">
+  <img class="cover-logo" src="{{LOGO_URI}}" alt="TreasuryMap" />
+  <h1>Treasury Technology</h1>
+  <div class="cover-subtitle">Long List &amp; Selection Framework</div>
+  <div class="cover-tagline">Based on the Treasury Technology Map — www.treasurymap.com</div>
+</div>
 {{CONTENT}}
 </body>
 </html>`;
@@ -224,10 +286,9 @@ async function renderPdf({
     month: "long",
     year: "numeric",
   });
-  const html = HTML_TEMPLATE.replace("{{TITLE}}", escapeHtml(title)).replace(
-    "{{CONTENT}}",
-    bodyHtml
-  );
+  const html = HTML_TEMPLATE.replace("{{TITLE}}", escapeHtml(title))
+    .replace("{{LOGO_URI}}", LOGO_DATA_URI)
+    .replace("{{CONTENT}}", bodyHtml);
 
   const browser = await puppeteer.launch({
     headless: true,

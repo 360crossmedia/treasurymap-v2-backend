@@ -145,4 +145,121 @@ const listCategories = async (req, res, next) => {
   }
 };
 
-module.exports = { generate, getStatus, listCategories, validatePayload };
+// Liste des vendors d'une catégorie donnée — utilisé par le form Compare Tools
+// (étape 2 : après que l'user a choisi sa catégorie, on lui propose les vendors).
+const listVendorsForCategory = async (req, res, next) => {
+  try {
+    const cid = parseInt(req.params.categoryId, 10);
+    if (!Number.isInteger(cid) || cid < CATEGORY_ID_MIN || cid > CATEGORY_ID_MAX) {
+      return res.status(400).json({ error: "categoryId invalide" });
+    }
+    const result = await matching.getProvidersForSingleCategory(cid);
+    res.json({
+      categoryId: result.categoryId,
+      categoryName: result.categoryName,
+      vendors: result.providers.map((p) => ({
+        id: p.id,
+        name: p.name,
+        logo: p.logo,
+        productName: p.productName,
+        website: p.website,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Validation spécifique au pipeline Compare.
+function validateComparisonPayload({ email, companyName, categoryId, vendorIds, context }) {
+  if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email))
+    return "Email invalide ou manquant";
+  if (email.length > MAX_EMAIL_LEN) return "Email trop long";
+
+  if (companyName != null) {
+    if (typeof companyName !== "string") return "companyName doit être une chaîne";
+    if (companyName.length > MAX_COMPANY_LEN) return "companyName trop long";
+  }
+
+  if (!Number.isInteger(categoryId) || categoryId < CATEGORY_ID_MIN || categoryId > CATEGORY_ID_MAX)
+    return "categoryId invalide";
+
+  if (!Array.isArray(vendorIds) || vendorIds.length < 2 || vendorIds.length > 5)
+    return "Choisir entre 2 et 5 vendors à comparer";
+  for (const id of vendorIds) {
+    if (!Number.isInteger(id) || id <= 0) return `vendorId invalide : ${id}`;
+  }
+  if (new Set(vendorIds).size !== vendorIds.length) return "vendorIds contient des doublons";
+
+  if (context != null) {
+    if (typeof context !== "string") return "context doit être une chaîne";
+    if (context.length > 2000) return "context trop long (max 2000 chars)";
+  }
+
+  return null;
+}
+
+const generateComparison = async (req, res, next) => {
+  try {
+    const { email, companyName, categoryId, vendorIds, context, website } = req.body || {};
+
+    // Honeypot
+    if (website && String(website).trim().length > 0) {
+      console.log(
+        `[compare] honeypot triggered (email=${String(email).slice(0, 50)}, ip=${req.ip})`
+      );
+      return res.status(202).json({
+        id: 0,
+        status: "pending",
+        message:
+          "Votre comparaison est en cours de génération. Vous la recevrez par email dans quelques minutes.",
+      });
+    }
+
+    const err = validateComparisonPayload({ email, companyName, categoryId, vendorIds, context });
+    if (err) return res.status(400).json({ error: err });
+
+    // Sanity check : que les vendors soient bien dans cette catégorie
+    const { vendors, missingIds, wrongCatIds } = await matching.getVendorsByIdsInCategory(
+      vendorIds,
+      categoryId
+    );
+    if (vendors.length < 2) {
+      return res.status(400).json({
+        error: "Vendors invalides ou hors catégorie",
+        details: { found: vendors.length, missing: missingIds, wrongCategory: wrongCatIds },
+      });
+    }
+
+    const report = await LongListReports.create({
+      email,
+      companyName: companyName || null,
+      reportType: "comparison",
+      categoryIds: [categoryId],
+      vendorIds,
+      answers: { context: context || "" },
+      status: "pending",
+    });
+
+    worker.enqueue(report.id);
+
+    res.status(202).json({
+      id: report.id,
+      status: report.status,
+      message:
+        "Votre comparaison est en cours de génération. Vous la recevrez par email dans quelques minutes.",
+    });
+  } catch (e) {
+    next(e);
+  }
+};
+
+module.exports = {
+  generate,
+  getStatus,
+  listCategories,
+  listVendorsForCategory,
+  generateComparison,
+  validatePayload,
+  validateComparisonPayload,
+};

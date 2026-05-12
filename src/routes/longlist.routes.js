@@ -1,7 +1,13 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const router = express.Router();
-const { generate, getStatus, listCategories } = require("../controllers/longlist");
+const {
+  generate,
+  getStatus,
+  listCategories,
+  listVendorsForCategory,
+  generateComparison,
+} = require("../controllers/longlist");
 
 // Rate limit STRICT sur /generate : chaque génération coûte ~$0.20 d'API Claude.
 // 5 générations / heure / IP en prod ; on garde aussi un compteur global "best effort"
@@ -26,7 +32,9 @@ const readLimiter = rateLimit({
 });
 
 router.get("/categories", readLimiter, listCategories);
+router.get("/vendors/:categoryId", readLimiter, listVendorsForCategory);
 router.post("/generate", generateLimiter, generate);
+router.post("/compare", generateLimiter, generateComparison);
 router.get("/status/:id", readLimiter, getStatus);
 
 module.exports = router;

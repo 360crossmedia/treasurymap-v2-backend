@@ -86,8 +86,57 @@ async function getProvidersForCategories(categoryIds) {
   }));
 }
 
+/**
+ * Renvoie la liste des providers d'UNE SEULE catégorie (Compare Tools form).
+ */
+async function getProvidersForSingleCategory(categoryId) {
+  const result = await getProvidersForCategories([categoryId]);
+  return result[0] || { categoryId, categoryName: null, providers: [] };
+}
+
+/**
+ * Récupère les vendors par leurs IDs et vérifie qu'ils sont TOUS dans la
+ * catégorie passée. Garantie que Compare Tools ne compare pas des hétérogènes.
+ *
+ * @param {number[]} vendorIds
+ * @param {number} categoryId
+ * @returns {Promise<{vendors:Array, missingIds:number[], wrongCatIds:number[]}>}
+ */
+async function getVendorsByIdsInCategory(vendorIds, categoryId) {
+  if (!Array.isArray(vendorIds) || vendorIds.length === 0) {
+    return { vendors: [], missingIds: [], wrongCatIds: [] };
+  }
+  const companies = await Companies.findAll({
+    where: { id: { [Op.in]: vendorIds }, live: true, multiplayerMap: true },
+    attributes: PROVIDER_FIELDS,
+    raw: true,
+  });
+  const foundIds = new Set(companies.map((c) => c.id));
+  const missingIds = vendorIds.filter((id) => !foundIds.has(id));
+  const wrongCatIds = [];
+  const vendors = companies
+    .filter((c) => {
+      const ok = Array.isArray(c.companyCategories) && c.companyCategories.includes(categoryId);
+      if (!ok) wrongCatIds.push(c.id);
+      return ok && isRealProvider(c.name);
+    })
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      description: c.description || null,
+      productName: c.productName || null,
+      productVersion: c.productVersion || null,
+      website: c.companyWebsite || null,
+      logo: c.logo || null,
+      inTreasuryMap: true,
+    }));
+  return { vendors, missingIds, wrongCatIds };
+}
+
 module.exports = {
   getAllCategories,
   getCategoriesByIds,
   getProvidersForCategories,
+  getProvidersForSingleCategory,
+  getVendorsByIdsInCategory,
 };

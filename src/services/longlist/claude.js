@@ -19,6 +19,14 @@ const USER_TEMPLATE = fs.readFileSync(
   path.join(__dirname, "prompts/user-template.txt"),
   "utf8"
 );
+const COMPARE_SYSTEM_PROMPT = fs.readFileSync(
+  path.join(__dirname, "prompts/compare-system.txt"),
+  "utf8"
+);
+const COMPARE_USER_TEMPLATE = fs.readFileSync(
+  path.join(__dirname, "prompts/compare-user-template.txt"),
+  "utf8"
+);
 
 let _client = null;
 function client() {
@@ -113,4 +121,78 @@ async function generateReport({ answers, shortlist }) {
   };
 }
 
-module.exports = { generateReport, buildUserPrompt };
+function formatVendorsBlock(vendors) {
+  return vendors
+    .map((v, i) => {
+      const lines = [`### Vendor ${i + 1}: ${v.name}`];
+      if (v.productName && v.productName !== "N/A") lines.push(`- Product: ${v.productName}`);
+      if (v.description && v.description !== "N/A") {
+        const desc = v.description.length > 600 ? v.description.slice(0, 600) + "…" : v.description;
+        lines.push(`- Description: ${desc}`);
+      }
+      if (v.website && v.website !== "N/A") lines.push(`- Website: ${v.website}`);
+      if (v.inTreasuryMap === false) {
+        lines.push("- *Note: this vendor is NOT currently mapped in TreasuryMap — limited internal data, public info only.*");
+      }
+      return lines.join("\n");
+    })
+    .join("\n\n");
+}
+
+function buildCompareUserPrompt({ categoryName, vendors, context }) {
+  const monthYear = new Date().toLocaleString("en-US", { month: "long", year: "numeric" });
+  return COMPARE_USER_TEMPLATE.replace("{{MONTH_YEAR}}", monthYear)
+    .replace("{{CATEGORY_NAME}}", categoryName)
+    .replace("{{VENDORS_BLOCK}}", formatVendorsBlock(vendors))
+    .replace("{{CONTEXT_BLOCK}}", context && context.trim() ? context.trim() : "(no additional context)");
+}
+
+/**
+ * Génère un rapport de COMPARAISON entre 2-5 vendors d'une MÊME catégorie.
+ * Sortie : markdown structuré (CONTEXT, CRITÈRES, TABLEAU, +/- par vendor, DISCLAIMER).
+ * Pas de recommandation finale (interdit par le prompt système).
+ *
+ * @param {object} input
+ * @param {string} input.categoryName - nom complet de la catégorie
+ * @param {Array}  input.vendors - 2-5 vendors avec {name, description, productName, website, logo, inTreasuryMap}
+ * @param {string} [input.context] - texte libre du client (max ~2000 chars)
+ * @returns {Promise<{markdown:string, usage:object, model:string, generationMs:number, stopReason:string}>}
+ */
+async function generateComparison({ categoryName, vendors, context }) {
+  const userPrompt = buildCompareUserPrompt({ categoryName, vendors, context });
+  const t0 = Date.now();
+
+  const stream = client().messages.stream({
+    model: MODEL,
+    max_tokens: MAX_TOKENS,
+    system: COMPARE_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+  const response = await stream.finalMessage();
+
+  const markdown = response.content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+
+  if (!markdown || markdown.length < 300) {
+    throw new Error(
+      `Sortie Claude trop courte ou vide (${markdown.length} chars, stop_reason=${response.stop_reason})`
+    );
+  }
+
+  return {
+    markdown,
+    usage: response.usage,
+    model: MODEL,
+    stopReason: response.stop_reason,
+    generationMs: Date.now() - t0,
+  };
+}
+
+module.exports = {
+  generateReport,
+  buildUserPrompt,
+  generateComparison,
+  buildCompareUserPrompt,
+};

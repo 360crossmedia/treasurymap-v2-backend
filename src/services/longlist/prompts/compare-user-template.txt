@@ -1,0 +1,13 @@
+Today's month/year: {{MONTH_YEAR}}.
+
+CATEGORY: {{CATEGORY_NAME}}
+
+VENDORS TO COMPARE (head-to-head):
+
+{{VENDORS_BLOCK}}
+
+OPTIONAL CLIENT CONTEXT (use only to tune the criteria, NOT to recommend a winner):
+
+{{CONTEXT_BLOCK}}
+
+Please produce the comparison report following the strict format defined in your instructions. Same-category only, no recommendation, no scoring, end with the mandated disclaimer.
