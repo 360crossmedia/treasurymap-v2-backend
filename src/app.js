@@ -1,5 +1,11 @@
 const express = require("express");
 const app = express();
+
+// Trust the reverse proxy in front of us (Railway / load balancers).
+// Without this, express-rate-limit sees the proxy IP instead of the real
+// client IP, and emits ERR_ERL_UNEXPECTED_X_FORWARDED_FOR warnings.
+app.set("trust proxy", 1);
+
 const cors = require("cors");
 const morgan = require("morgan");
 const db = require("./utils/database");
