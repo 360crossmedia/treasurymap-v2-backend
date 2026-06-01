@@ -1,13 +1,37 @@
+// Email delivery via Resend (https://resend.com).
+//
+// Behaviour:
+//  - If RESEND_API_KEY is set → real send via Resend HTTP API.
+//  - Otherwise → fallback file (PDF + JSON metadata) in os.tmpdir()/longlist-emails/
+//    so the pipeline can be tested locally without a Resend account.
+//
+// FROM address comes from EMAIL_FROM env var; we default to the Resend sandbox
+// "TreasuryMap <onboarding@resend.dev>" which works out-of-the-box but is limited
+// to the Resend account owner's email as recipient. To send to arbitrary
+// recipients, a verified domain must be set up on Resend and EMAIL_FROM updated
+// (e.g. "TreasuryMap <reports@treasurymap.360crossmedia.com>").
+
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const transporter = require("../../utils/nodemailer");
+const { Resend } = require("resend");
 
-const FROM = '"TreasuryMap" <noreply@treasurymap.com>';
+const FROM = process.env.EMAIL_FROM || "TreasuryMap <onboarding@resend.dev>";
 const FALLBACK_DIR = path.join(os.tmpdir(), "longlist-emails");
 
+let _resend = null;
+function resendClient() {
+  if (!_resend) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY manquante dans l'env");
+    }
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+}
+
 function isCredsAvailable() {
-  return process.env.G_PASSWORD && process.env.G_PASSWORD !== "local-dev-noop";
+  return !!process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "local-dev-noop";
 }
 
 function bodyText({ companyName, pdfUrl }) {
@@ -36,7 +60,7 @@ function bodyHtml({ companyName, pdfUrl }) {
 <p>Your <strong>TreasuryMap Long List</strong> report is attached.</p>
 ${
   pdfUrl
-    ? `<p>You can also <a href="${escapeHtml(pdfUrl)}" style="color:#094895;font-weight:600">access the report online</a>.</p>`
+    ? `<p>You can also <a href="${escapeHtml(pdfUrl)}" style="color:#0E7490;font-weight:600">access the report online</a>.</p>`
     : ""
 }
 <p>This long list was generated based on your answers to the profiling questions${
@@ -57,16 +81,16 @@ function escapeHtml(s) {
 }
 
 /**
- * Envoie le rapport PDF par email à l'utilisateur.
- * Si les credentials Gmail sont absents (G_PASSWORD=local-dev-noop), tombe en
- * mode "fallback" : sauvegarde l'email dans os.tmpdir()/longlist-emails/ pour
- * permettre de tester le pipeline complet en local sans Gmail réel.
+ * Envoie le rapport PDF par email à l'utilisateur via Resend.
+ * Si RESEND_API_KEY est absent, sauvegarde l'email en local pour debug
+ * (pipeline testable sans compte Resend).
  *
  * @param {object} opts
  * @param {string} opts.to
  * @param {string|null} opts.companyName
  * @param {string} opts.pdfPath - chemin local vers le PDF à attacher
- * @returns {Promise<{sent:boolean, mode:'smtp'|'fallback', messageId?:string, savedTo?:string}>}
+ * @param {string|null} [opts.pdfUrl] - URL Cloudinary si dispo
+ * @returns {Promise<{sent:boolean, mode:'resend'|'fallback', messageId?:string, savedTo?:string, smtpError?:string}>}
  */
 async function sendReportEmail({ to, companyName, pdfPath, pdfUrl = null }) {
   if (!to) throw new Error("to manquant");
@@ -75,6 +99,8 @@ async function sendReportEmail({ to, companyName, pdfPath, pdfUrl = null }) {
   }
 
   const subject = `Your TreasuryMap Long List${companyName ? ` — ${companyName}` : ""}`;
+  const pdfBuffer = fs.readFileSync(pdfPath);
+
   const message = {
     from: FROM,
     to,
@@ -84,7 +110,7 @@ async function sendReportEmail({ to, companyName, pdfPath, pdfUrl = null }) {
     attachments: [
       {
         filename: "TreasuryMap-LongList.pdf",
-        path: pdfPath,
+        content: pdfBuffer, // Resend SDK accepts Buffer directly
         contentType: "application/pdf",
       },
     ],
@@ -95,11 +121,15 @@ async function sendReportEmail({ to, companyName, pdfPath, pdfUrl = null }) {
   }
 
   try {
-    const info = await transporter.sendMail(message);
-    return { sent: true, mode: "smtp", messageId: info.messageId };
+    const { data, error } = await resendClient().emails.send(message);
+    if (error) {
+      const fallback = saveFallback({ message, pdfPath, error: error.message || JSON.stringify(error) });
+      return { ...fallback, smtpError: error.message || String(error) };
+    }
+    return { sent: true, mode: "resend", messageId: data?.id };
   } catch (err) {
-    // En cas d'échec SMTP, on ne plante pas le pipeline : on sauvegarde
-    // l'email en local pour debug et on remonte l'erreur dans le résultat.
+    // En cas d'erreur Resend (5xx / réseau), on ne plante pas le pipeline :
+    // on sauvegarde en local et on remonte l'erreur dans le résultat.
     const fallback = saveFallback({ message, pdfPath, error: err.message });
     return { ...fallback, smtpError: err.message };
   }
