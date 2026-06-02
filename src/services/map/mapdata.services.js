@@ -1,5 +1,19 @@
 const categoriesTemplate = require("./categoriesTemplate.js");
- 
+
+const SITE_URL = process.env.PUBLIC_SITE_URL || "https://treasurymap-v2-production.up.railway.app";
+
+// Generate a URL-friendly slug from a company name (mirrors front-end slugify.js)
+function slugify(input) {
+  if (!input) return "";
+  return String(input)
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+}
 
 // Function to fetch company data
 async function fetchCompanies() {
@@ -28,7 +42,9 @@ async function processCategories() {
                     category.logos.push(
                         {
                             image: company.logo || '',
-                            url: `https://treasurymap.vercel.app/companyPage/${company.id}`,
+                            url: slugify(company.name)
+                              ? `${SITE_URL}/providers/${slugify(company.name)}`
+                              : `${SITE_URL}/companyPage/${company.id}`,
                             keywords: company.keywords || [],
                             subcategories: company.companySubcategories || [],
                             headequarterLocation: company.location || '',
