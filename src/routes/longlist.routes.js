@@ -7,6 +7,7 @@ const {
   listCategories,
   listVendorsForCategory,
   generateComparison,
+  downloadPdf,
 } = require("../controllers/longlist");
 
 // Rate limit STRICT sur /generate : chaque génération coûte ~$0.20 d'API Claude.
@@ -36,5 +37,6 @@ router.get("/vendors/:categoryId", readLimiter, listVendorsForCategory);
 router.post("/generate", generateLimiter, generate);
 router.post("/compare", generateLimiter, generateComparison);
 router.get("/status/:id", readLimiter, getStatus);
+router.get("/pdf/:id", readLimiter, downloadPdf);
 
 module.exports = router;

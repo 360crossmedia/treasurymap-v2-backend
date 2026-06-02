@@ -1,6 +1,9 @@
 const LongListReports = require("../../models/longlistReports.models");
 const worker = require("../../services/longlist/worker");
 const matching = require("../../services/longlist/matching");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -254,12 +257,44 @@ const generateComparison = async (req, res, next) => {
   }
 };
 
+// Serve the generated PDF directly — fallback when Cloudinary is not configured.
+// The file lives at /tmp/longlist-pdfs/longlist-{id}.pdf on the Railway container.
+// Note: ephemeral storage — file disappears on container restart.
+async function downloadPdf(req, res) {
+  const id = parseInt(req.params.id, 10);
+  if (!id || isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const report = await LongListReports.findByPk(id);
+  if (!report) return res.status(404).json({ error: "Report not found" });
+
+  // If pdf_path is a Cloudinary URL, redirect to it
+  if (report.pdfPath && report.pdfPath.startsWith("http")) {
+    return res.redirect(302, report.pdfPath);
+  }
+
+  // Otherwise try local /tmp path
+  const localPath = report.pdfPath ||
+    path.join(os.tmpdir(), "longlist-pdfs", `longlist-${id}.pdf`);
+
+  if (!fs.existsSync(localPath)) {
+    return res.status(404).json({
+      error: "PDF not found on disk (container may have restarted). Please regenerate.",
+    });
+  }
+
+  const type = report.reportType === "compare" ? "compare" : "longlist";
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="TreasuryMap-${type}-${id}.pdf"`);
+  fs.createReadStream(localPath).pipe(res);
+}
+
 module.exports = {
   generate,
   getStatus,
   listCategories,
   listVendorsForCategory,
   generateComparison,
+  downloadPdf,
   validatePayload,
   validateComparisonPayload,
 };
