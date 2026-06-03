@@ -6,7 +6,7 @@ const sendEmail = async (req, res, next) => {
   try {
     const { company, message, name, email } = req.body;
     const result = await transporter.sendMail({
-      to: "treasury.map.project@gmail.com, contact@360crossmedia.com, care@360crossmedia.com",
+      to: "treasury.map.project@gmail.com, contact@360crossmedia.com, care@360crossmedia.com, studio@360crossmedia.com",
       subject: `New Message From Contact Us TreasuryMap`,
       html: `
       <p>Email: ${email}</p>
