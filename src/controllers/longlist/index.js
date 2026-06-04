@@ -130,10 +130,12 @@ const getStatus = async (req, res, next) => {
     const { id } = req.params;
     if (!/^\d+$/.test(String(id))) return res.status(400).json({ error: "id invalide" });
     const report = await LongListReports.findByPk(id, {
-      attributes: ["id", "status", "emailedAt", "errorMessage", "createdAt"],
+      attributes: ["id", "status", "emailedAt", "errorMessage", "createdAt", "pdfPath"],
     });
     if (!report) return res.status(404).json({ error: "Report introuvable" });
-    res.json(report);
+    // pdfReady lets the front show a guaranteed Download button.
+    const pdfReady = report.status === "sent" || !!report.pdfPath;
+    res.json({ ...report.toJSON(), pdfReady });
   } catch (err) {
     next(err);
   }
@@ -267,12 +269,23 @@ async function downloadPdf(req, res) {
   const report = await LongListReports.findByPk(id);
   if (!report) return res.status(404).json({ error: "Report not found" });
 
-  // If pdf_path is a Cloudinary URL, redirect to it
+  const type = report.reportType === "compare" ? "compare" : "longlist";
+
+  // 1) Preferred: the PDF kept in the DB — always available, survives restarts
+  //    and needs no Cloudinary.
+  if (report.pdfData) {
+    const buf = Buffer.from(report.pdfData, "base64");
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="TreasuryMap-${type}-${id}.pdf"`);
+    return res.send(buf);
+  }
+
+  // 2) If pdf_path is a Cloudinary URL, redirect to it.
   if (report.pdfPath && report.pdfPath.startsWith("http")) {
     return res.redirect(302, report.pdfPath);
   }
 
-  // Otherwise try local /tmp path
+  // 3) Last resort: local /tmp path (only valid before a container restart).
   const localPath = report.pdfPath ||
     path.join(os.tmpdir(), "longlist-pdfs", `longlist-${id}.pdf`);
 
@@ -282,7 +295,6 @@ async function downloadPdf(req, res) {
     });
   }
 
-  const type = report.reportType === "compare" ? "compare" : "longlist";
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="TreasuryMap-${type}-${id}.pdf"`);
   fs.createReadStream(localPath).pipe(res);

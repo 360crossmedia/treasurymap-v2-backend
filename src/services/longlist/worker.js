@@ -1,3 +1,4 @@
+const fs = require("fs");
 const LongListReports = require("../../models/longlistReports.models");
 const matching = require("./matching");
 const claude = require("./claude");
@@ -73,7 +74,11 @@ async function processReport(reportId) {
     // En l'absence de creds, fallback silencieux sur le path local.
     const cloudResult = await cloudinary.uploadPdf(pdfResult.path, { reportId: report.id });
     const persistedPath = cloudResult.ok ? cloudResult.url : pdfResult.path;
-    await report.update({ pdfPath: persistedPath });
+    // Always persist the PDF bytes in the DB so the download endpoint works even
+    // after a container restart and without Cloudinary.
+    let pdfData = null;
+    try { pdfData = fs.readFileSync(pdfResult.path).toString("base64"); } catch (_) {}
+    await report.update({ pdfPath: persistedPath, pdfData });
 
     // 5. Email — pièce jointe (locale) + lien (Cloudinary si dispo, fallback local)
     const emailResult = await email.sendReportEmail({
@@ -172,7 +177,9 @@ async function processComparison(report) {
       reportId: report.id,
     });
     const persistedPath = cloudResult.ok ? cloudResult.url : pdfResult.path;
-    await report.update({ pdfPath: persistedPath });
+    let pdfData = null;
+    try { pdfData = fs.readFileSync(pdfResult.path).toString("base64"); } catch (_) {}
+    await report.update({ pdfPath: persistedPath, pdfData });
 
     const emailResult = await email.sendReportEmail({
       to: report.email,

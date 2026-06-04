@@ -54,6 +54,12 @@ const LongListReports = db.define(
       type: DataTypes.STRING,
       field: "pdf_path",
     },
+    // The rendered PDF kept in the DB (base64). Guarantees the download endpoint
+    // works even on ephemeral filesystems (Railway) and without Cloudinary.
+    pdfData: {
+      type: DataTypes.TEXT,
+      field: "pdf_data",
+    },
     errorMessage: {
       type: DataTypes.TEXT,
       field: "error_message",
