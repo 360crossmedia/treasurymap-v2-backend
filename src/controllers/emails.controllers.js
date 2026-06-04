@@ -1,12 +1,15 @@
-const transporter = require("../utils/nodemailer");
+const { sendMail, INTERNAL_INBOX } = require("../utils/mailer");
 const AuthServices = require("../services/auth.services");
 const UsersServices = require("../services/users.services");
 
+// Contact Us form. Delivers to the internal inbox with the visitor as reply-to,
+// so the team can answer them directly.
 const sendEmail = async (req, res, next) => {
   try {
     const { company, message, name, email } = req.body;
-    const result = await transporter.sendMail({
-      to: "treasury.map.project@gmail.com, contact@360crossmedia.com, care@360crossmedia.com, studio@360crossmedia.com",
+    await sendMail({
+      to: INTERNAL_INBOX,
+      replyTo: email,
       subject: `New Message From Contact Us TreasuryMap`,
       html: `
       <p>Email: ${email}</p>
@@ -15,17 +18,18 @@ const sendEmail = async (req, res, next) => {
       <p>Message: ${message}</p>
       `,
     });
-    return res.status(200).json(result);
+    return res.status(200).json({ ok: true });
   } catch (error) {
-    next(error);
+    console.error("Contact Us email failed:", error && error.message);
+    return res.status(502).json({ ok: false, error: "Email delivery failed" });
   }
 };
 
 const updateMessage = async (req, res, next) => {
   try {
     const { companyName, name, previousValue, newValue } = req.body;
-    const result = await transporter.sendMail({
-      to: "treasury.map.project@gmail.com",
+    const result = await sendMail({
+      to: INTERNAL_INBOX,
       subject: `Update Alert From Company ${companyName}`,
       html: `
       <h5>The user ${name} updated the company ${companyName}</h5>
@@ -48,8 +52,8 @@ const updateMessage = async (req, res, next) => {
 const createMessage = async (req, res, next) => {
   try {
     const { companyName, name } = req.body;
-    const result = await transporter.sendMail({
-      to: "treasury.map.project@gmail.com",
+    const result = await sendMail({
+      to: INTERNAL_INBOX,
       subject: `New Alert From User ${name}`,
       html: `
       <h5>The user ${name} created the company ${companyName}</h5>
@@ -69,7 +73,7 @@ const restorePassword = async (req, res, next) => {
       res.status(400).json({ message: "Wrong Email" });
     } else {
       const token = AuthServices.genToken({ userId });
-      const result = await transporter.sendMail({
+      const result = await sendMail({
         to: email,
         subject: "Restore Password",
         html: `
@@ -87,8 +91,8 @@ const restorePassword = async (req, res, next) => {
 const signUpAlert = async (req, res, next) => {
   try {
     const props = req.body;
-    const result = await transporter.sendMail({
-      to: "treasury.map.project@gmail.com, contact@360crossmedia.com, care@360crossmedia.com",
+    const result = await sendMail({
+      to: INTERNAL_INBOX,
       subject: "New Sign Up On TreasuryMap",
       html: `
         <h5>Email: ${props.email}</h5>
@@ -105,8 +109,8 @@ const signUpAlert = async (req, res, next) => {
 const newPublicationAlert = async (req, res, next) => {
   try {
     const props = req.body;
-    const result = await transporter.sendMail({
-      to: "treasury.map.project@gmail.com, care@360crossmedia.com",
+    const result = await sendMail({
+      to: INTERNAL_INBOX,
       subject: `New Publication from ${props?.companyName} On TreasuryMap`,
       html: `
         <h5>Title: ${props?.title}</h5>
