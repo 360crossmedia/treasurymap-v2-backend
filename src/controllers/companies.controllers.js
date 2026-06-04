@@ -1,36 +1,5 @@
 const CompaniesServices = require("../services/companies.service");
 const { slugify } = require("../utils/slugify");
-const Companies = require("../models/companies.models");
-const Users = require("../models/user.models");
-
-// One-time data fix: every company was migrated under a single owner (#11).
-// Reassign each company to the user whose name matches the company; otherwise
-// to the master admin (#1). Guarded by a key; remove after running.
-const fixOwners = async (req, res) => {
-  if (req.query.key !== "tm-fix-owners-2026") {
-    return res.status(403).json({ message: "forbidden" });
-  }
-  try {
-    const norm = (s) => (s || "").trim().toLowerCase();
-    const companies = await Companies.findAll();
-    const users = await Users.findAll();
-    const byName = {};
-    for (const u of users) {
-      const k = norm(u.fullName);
-      if (k && !(k in byName)) byName[k] = u.id;
-    }
-    let toVendor = 0, toAdmin = 0, unchanged = 0;
-    for (const c of companies) {
-      const target = byName[norm(c.name)] != null ? byName[norm(c.name)] : 1;
-      if (c.userId === target) { unchanged++; continue; }
-      await Companies.update({ userId: target }, { where: { id: c.id } });
-      target === 1 ? toAdmin++ : toVendor++;
-    }
-    res.json({ ok: true, total: companies.length, reassignedToVendor: toVendor, reassignedToAdmin: toAdmin, unchanged });
-  } catch (e) {
-    res.status(500).json({ error: String(e) });
-  }
-};
 
 const getCompanyUserOwn = async (req, res, next) => {
   try {
@@ -153,5 +122,4 @@ module.exports = {
   upadateCompanyData,
   deleteCompany,
   companyHasMediaContent,
-  fixOwners,
 };
