@@ -10,14 +10,15 @@ const {
   getAllCompanies,
   companyHasMediaContent,
 } = require("../controllers/companies.controllers");
+const { requireAuth, requireAdmin } = require("../middlewares/auth.middleware");
 
 router.get("/", getAllCompanies);
 router.get("/by-slug/:slug", getCompanyBySlug);
 router.get("/:companyId", getCompanyData);
 router.get("/getByOwner/:userId", getCompanyUserOwn);
 router.get("/hasMedia/:companyId", companyHasMediaContent);
-router.post("/create", createUserCompany);
-router.put("/:companyId", upadateCompanyData);
-router.delete("/:companyId", deleteCompany);
+router.post("/create", requireAdmin, createUserCompany);
+router.put("/:companyId", requireAuth, upadateCompanyData);
+router.delete("/:companyId", requireAdmin, deleteCompany);
 
 module.exports = router;

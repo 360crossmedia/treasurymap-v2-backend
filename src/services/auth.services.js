@@ -33,7 +33,7 @@ class AuthServices {
     try {
       const token = jwt.sign(data, process.env.JWT_SECRET, {
         algorithm: "HS512",
-        expiresIn: "10m",
+        expiresIn: "7d",
       });
       return token;
     } catch (error) {

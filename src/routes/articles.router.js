@@ -8,12 +8,13 @@ const {
   GetArticleById,
   updateArticle,
 } = require("../controllers/articles.controllers");
+const { requireAuth } = require("../middlewares/auth.middleware");
 
 router.get("/", GetAllArticles);
 router.get("/all/:companyId", GetArticleByCompanyId);
 router.get("/:articleId", GetArticleById);
-router.post("/create/:companyId", CreateArticle);
-router.put("/:articleId", updateArticle);
-router.delete("/:articleid", DeleteArticle);
+router.post("/create/:companyId", requireAuth, CreateArticle);
+router.put("/:articleId", requireAuth, updateArticle);
+router.delete("/:articleid", requireAuth, DeleteArticle);
 
 module.exports = router;

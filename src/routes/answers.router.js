@@ -6,10 +6,11 @@ const {
   updateAnswer,
   deleteAllAnswersByCompanyId,
 } = require("../controllers/answers.controllers");
+const { requireAuth } = require("../middlewares/auth.middleware");
 
 router.get("/:companyId", GetAnswerByCompanyId);
-router.post("/:companyId", CreateAnswer);
-router.put("/:answerId", updateAnswer);
-router.delete("/:companyId", deleteAllAnswersByCompanyId);
+router.post("/:companyId", requireAuth, CreateAnswer);
+router.put("/:answerId", requireAuth, updateAnswer);
+router.delete("/:companyId", requireAuth, deleteAllAnswersByCompanyId);
 
 module.exports = router;
