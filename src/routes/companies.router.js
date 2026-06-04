@@ -9,11 +9,9 @@ const {
   deleteCompany,
   getAllCompanies,
   companyHasMediaContent,
-  syncLiveFromA,
 } = require("../controllers/companies.controllers");
 const { requireAuth, requireAdmin } = require("../middlewares/auth.middleware");
 
-router.get("/sync-live-7f3a2b", syncLiveFromA);
 router.get("/", getAllCompanies);
 router.get("/by-slug/:slug", getCompanyBySlug);
 router.get("/:companyId", getCompanyData);
