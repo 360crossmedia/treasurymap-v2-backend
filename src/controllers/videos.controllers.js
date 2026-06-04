@@ -12,6 +12,15 @@ const CreateVideo = async (req, res, next) => {
   }
 };
 
+const GetAllVideos = async (req, res) => {
+  try {
+    const result = await VideosServices.GetAllVideosService();
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json(error);
+  }
+};
+
 const GetVideoByCompanyId = async (req, res) => {
   try {
     const { companyId } = req.params;
@@ -71,6 +80,7 @@ const updateVideo = async (req, res, next) => {
 
 module.exports = {
   CreateVideo,
+  GetAllVideos,
   GetVideoByCompanyId,
   DeleteVideo,
   getVideoById,

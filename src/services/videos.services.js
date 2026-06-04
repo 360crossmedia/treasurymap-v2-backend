@@ -10,6 +10,14 @@ class VideosServices {
     }
   }
 
+  static async GetAllVideosService() {
+    try {
+      return await Videos.findAll({ order: [["createdAt", "DESC"]] });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async GetVideoByCompanyIdService(companyId) {
     try {
       const VideosList = await Videos.findAll({

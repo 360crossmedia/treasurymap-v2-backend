@@ -12,6 +12,15 @@ const CreateArticle = async (req, res, next) => {
   }
 };
 
+const GetAllArticles = async (req, res) => {
+  try {
+    const result = await ArticlesServices.GetAllArticlesService();
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json(error);
+  }
+};
+
 const GetArticleByCompanyId = async (req, res) => {
   try {
     const { companyId } = req.params;
@@ -76,6 +85,7 @@ const updateArticle = async (req, res, next) => {
 
 module.exports = {
   CreateArticle,
+  GetAllArticles,
   GetArticleByCompanyId,
   DeleteArticle,
   GetArticleById,

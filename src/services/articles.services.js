@@ -10,6 +10,14 @@ class ArticlesServices {
     }
   }
 
+  static async GetAllArticlesService() {
+    try {
+      return await Articles.findAll({ order: [["createdAt", "DESC"]] });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async GetArticleByCompanyIdService(companyId) {
     try {
       const ArticlesList = await Articles.findAll({
