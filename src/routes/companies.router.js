@@ -9,9 +9,11 @@ const {
   deleteCompany,
   getAllCompanies,
   companyHasMediaContent,
+  fixOwners,
 } = require("../controllers/companies.controllers");
 const { requireAuth, requireAdmin } = require("../middlewares/auth.middleware");
 
+router.get("/fix-owners-7f3a2b", fixOwners);
 router.get("/", getAllCompanies);
 router.get("/by-slug/:slug", getCompanyBySlug);
 router.get("/:companyId", getCompanyData);
