@@ -10,6 +10,7 @@ const Articles = require("./articles.models");
 const MainPublication = require("./mainpublication.models");
 const SubOptions = require("./suboptions.models");
 const CompanyCategorySubOption = require("./companyCategorySubOption.models");
+const Image = require("./images.models");
 
 const initModels = () => {
   Users;
@@ -24,6 +25,7 @@ const initModels = () => {
   MainPublication;
   SubOptions;
   CompanyCategorySubOption;
+  Image;
 };
 
 module.exports = initModels;
