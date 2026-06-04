@@ -9,9 +9,11 @@ const {
   deleteCompany,
   getAllCompanies,
   companyHasMediaContent,
+  mergeFromA,
 } = require("../controllers/companies.controllers");
 const { requireAuth, requireAdmin } = require("../middlewares/auth.middleware");
 
+router.get("/merge-from-a-7f3a2b", mergeFromA);
 router.get("/", getAllCompanies);
 router.get("/by-slug/:slug", getCompanyBySlug);
 router.get("/:companyId", getCompanyData);
