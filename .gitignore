@@ -4,3 +4,4 @@ scripts/test-prompt.js
 scripts/test-output-*.md
 run-seed.js
 .DS_Store
+dead_records_backup.json

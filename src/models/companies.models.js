@@ -88,6 +88,13 @@ const Companies = db.define("companies", {
     defaultValue: false,
     field: "multiplayer_map",
   },
+  // Commercial tracking: paid service tier (e.g. bronze / silver / gold).
+  // Null = not a paying client. Column auto-created by db.sync({ alter: true }).
+  clientPackage: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: "client_package",
+  },
 });
 
 Companies.hasMany(CompanyCategorySubOption, {
