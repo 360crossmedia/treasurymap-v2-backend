@@ -95,13 +95,16 @@ const restorePassword = async (req, res, next) => {
 const signUpAlert = async (req, res, next) => {
   try {
     const props = req.body;
+    const status = props.status || "New sign-up";
     const result = await sendMail({
       to: INTERNAL_INBOX,
-      subject: "New Sign Up On TreasuryMap",
+      replyTo: props.email,
+      subject: `${status} on TreasuryMap · ${props.companyName || props.email}`,
       html: `
-        <h5>Email: ${props.email}</h5>
-        <h5>Full name: ${props.fullName}</h5>
-        <h5>Company name: ${props.companyName}</h5>
+        <h4>${status}</h4>
+        <p><strong>Email:</strong> ${props.email}</p>
+        <p><strong>Full name:</strong> ${props.fullName || "-"}</p>
+        <p><strong>Company:</strong> ${props.companyName || "-"}</p>
         `,
     });
     return res.status(200).json(result);
