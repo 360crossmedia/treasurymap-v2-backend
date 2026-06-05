@@ -397,7 +397,7 @@ async function renderPdf({
   const outPath = path.join(outputDir, file);
 
   marked.setOptions({ gfm: true, breaks: false });
-  const rawHtml = marked.parse(markdown);
+  const rawHtml = marked.parse(normalizeDashes(markdown));
   const bodyHtml = postProcessHtml(rawHtml);
   const monthYear = new Date().toLocaleString("en-US", {
     month: "long",
@@ -428,6 +428,17 @@ async function renderPdf({
   }
 
   return { path: outPath, sizeBytes: fs.statSync(outPath).size };
+}
+
+// Strip the AI-tell em dashes / en dashes from the generated report so the PDF
+// reads like a human consultant wrote it. Em dash (clause break) becomes a
+// spaced hyphen; en dash (typically a numeric range like 500M-1B) becomes a
+// plain hyphen. Markdown table separators (---) and bullet hyphens are ASCII,
+// so they are untouched.
+function normalizeDashes(md) {
+  return String(md)
+    .replace(/\s*—\s*/g, " - ") // — em dash
+    .replace(/–/g, "-"); // – en dash
 }
 
 function escapeHtml(s) {
@@ -500,4 +511,4 @@ function postProcessHtml(html) {
   return out;
 }
 
-module.exports = { renderPdf, postProcessHtml };
+module.exports = { renderPdf, postProcessHtml, normalizeDashes };
