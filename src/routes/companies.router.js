@@ -17,7 +17,7 @@ router.get("/by-slug/:slug", getCompanyBySlug);
 router.get("/:companyId", getCompanyData);
 router.get("/getByOwner/:userId", getCompanyUserOwn);
 router.get("/hasMedia/:companyId", companyHasMediaContent);
-router.post("/create", requireAdmin, createUserCompany);
+router.post("/create", requireAuth, createUserCompany);
 router.put("/:companyId", requireAuth, upadateCompanyData);
 router.delete("/:companyId", requireAdmin, deleteCompany);
 
