@@ -73,7 +73,16 @@ const getAllCompanies = async (req, res, next) => {
       });
       return res.status(200).json(enriched);
     }
-    res.status(200).json(result);
+    // Public / non-admin callers only ever see LIVE companies. The full table
+    // (incl. unpublished drafts) was being exposed to anyone hitting this
+    // endpoint directly. Live-only matches what every public surface needs:
+    // the homepage map further filters to logo+maincategory, and the providers
+    // hub already filters on live. A vendor still sees their own draft via the
+    // owner-scoped endpoint, not this list.
+    const publicResult = Array.isArray(result)
+      ? result.filter((c) => c && c.live)
+      : result;
+    res.status(200).json(publicResult);
   } catch (error) {
     next(error);
   }
