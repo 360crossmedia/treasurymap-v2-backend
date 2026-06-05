@@ -3,7 +3,10 @@ const Users = require("../models/user.models");
 class UsersServices {
   static async getAllUsers() {
     try {
-      const result = await Users.findAll();
+      // Never serialize the password hash to clients.
+      const result = await Users.findAll({
+        attributes: { exclude: ["password"] },
+      });
       return result;
     } catch (error) {
       throw error;
@@ -21,7 +24,10 @@ class UsersServices {
   }
   static async getUserById(id) {
     try {
-      const result = await Users.findByPk(id);
+      // Never serialize the password hash to clients.
+      const result = await Users.findByPk(id, {
+        attributes: { exclude: ["password"] },
+      });
       return result;
     } catch (error) {
       throw error;
