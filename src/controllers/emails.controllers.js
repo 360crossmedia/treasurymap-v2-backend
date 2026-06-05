@@ -1,40 +1,25 @@
-const { sendMail, INTERNAL_INBOX } = require("../utils/mailer");
+const { sendMail, INTERNAL_INBOX, ON_SANDBOX, CONTACT_TO } = require("../utils/mailer");
 const AuthServices = require("../services/auth.services");
 const UsersServices = require("../services/users.services");
 
-// Contact Us form. Behaves exactly like the current live map: it delegates to
-// backend A's working contact endpoint (Gmail -> care@/contact@/studio@). If A
-// is unreachable, it falls back to the local Resend mailer (internal inbox).
-const LIVE_CONTACT_ENDPOINT =
-  "https://treasurymapbackend-production.up.railway.app/api/v1/email";
-
+// Contact Us form. Delivered via Resend with proper authentication (clean
+// deliverability — no spam-foldering like the old empty-sender Gmail path).
+// While on the Resend sandbox FROM, recipients are limited to the account owner,
+// so we route to the internal inbox; once a domain is verified and EMAIL_FROM is
+// updated, it delivers straight to the team list (CONTACT_TO: care@/studio@/...).
 const sendEmail = async (req, res, next) => {
   const { company, message, name, email } = req.body;
-
-  // 1) Mirror the current map — delegate to backend A.
-  try {
-    const r = await fetch(LIVE_CONTACT_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ company, message, name, email }),
-    });
-    if (r.ok) return res.status(200).json({ ok: true });
-    console.error("Contact proxy to backend A failed:", r.status);
-  } catch (e) {
-    console.error("Contact proxy to backend A error:", e && e.message);
-  }
-
-  // 2) Fallback — local mailer (Resend -> internal inbox), reply-to the visitor.
+  const to = ON_SANDBOX ? INTERNAL_INBOX : CONTACT_TO;
   try {
     await sendMail({
-      to: INTERNAL_INBOX,
+      to,
       replyTo: email,
       subject: `New Message From Contact Us TreasuryMap`,
       html: `
-      <p>Email: ${email}</p>
-      <p>Company: ${company}</p>
-      <p>Name: ${name}</p>
-      <p>Message: ${message}</p>
+      <p><strong>From:</strong> ${name} (${email})</p>
+      <p><strong>Company:</strong> ${company}</p>
+      <p><strong>Message:</strong></p>
+      <p>${message}</p>
       `,
     });
     return res.status(200).json({ ok: true });

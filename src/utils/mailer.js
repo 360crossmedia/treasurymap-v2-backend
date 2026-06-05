@@ -11,8 +11,18 @@ const transporter = require("./nodemailer");
 
 const FROM = process.env.EMAIL_FROM || "TreasuryMap <onboarding@resend.dev>";
 
-// Inbox that receives contact-form messages and internal alerts.
-const INTERNAL_INBOX = process.env.CONTACT_TO || "relations@360crossmedia.com";
+// True while using the Resend sandbox FROM, which can only deliver to the
+// account owner. Once EMAIL_FROM is a verified-domain address, this is false.
+const ON_SANDBOX = /onboarding@resend\.dev/i.test(FROM);
+
+// The only address the Resend sandbox can reach (the account owner). Used as the
+// interim recipient for contact + alerts until a domain is verified.
+const INTERNAL_INBOX = process.env.INTERNAL_INBOX || "relations@360crossmedia.com";
+
+// The real team recipient list, used once a domain is verified (EMAIL_FROM set).
+const CONTACT_TO =
+  process.env.CONTACT_TO ||
+  "care@360crossmedia.com, studio@360crossmedia.com, contact@360crossmedia.com";
 
 const resendReady = () =>
   !!process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== "local-dev-noop";
@@ -58,4 +68,4 @@ async function sendMail({ to, subject, html, text, replyTo }) {
   return { mode: "gmail", result };
 }
 
-module.exports = { sendMail, INTERNAL_INBOX, FROM };
+module.exports = { sendMail, INTERNAL_INBOX, CONTACT_TO, FROM, ON_SANDBOX };
