@@ -11,7 +11,7 @@ function isAvailable() {
 /**
  * Upload un PDF local sur Cloudinary (resource_type: raw).
  * En l'absence de credentials valides, retourne { ok:false, mode:'skipped' }
- * sans throw — le pipeline continue avec le path local.
+ * sans throw · le pipeline continue avec le path local.
  *
  * @param {string} localPath - chemin du PDF local
  * @param {object} opts

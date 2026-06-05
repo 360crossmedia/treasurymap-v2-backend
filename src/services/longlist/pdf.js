@@ -51,7 +51,7 @@ const HTML_TEMPLATE = `<!doctype html>
   h1 + h2 { margin-top: 4pt; font-size: 14pt; color: var(--brand); border: none; padding: 0; font-weight: 500; letter-spacing: 0.5pt; }
   h1 + h2 + p em { color: var(--brand); font-style: normal; font-weight: 500; }
 
-  /* Section headings — cyan underline like the website */
+  /* Section headings · cyan underline like the website */
   h2 { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16pt; color: var(--ink); margin: 26pt 0 10pt 0; padding-bottom: 6pt; border-bottom: 2px solid var(--brand); font-weight: 700; letter-spacing: -0.2px; }
   h3 { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12.5pt; color: var(--brand-dark); margin: 18pt 0 6pt 0; font-weight: 600; }
   h4 { font-size: 11pt; color: var(--ink); margin: 10pt 0 4pt 0; font-weight: 600; }
@@ -66,7 +66,7 @@ const HTML_TEMPLATE = `<!doctype html>
   code { background: var(--surface); padding: 1px 4px; border-radius: 3px; font-size: 9.5pt; color: var(--brand-dark); }
   hr { border: none; border-top: 1px solid var(--line); margin: 14pt 0; }
 
-  /* Tables — cyan headers, soft alternation, no dated brown */
+  /* Tables · cyan headers, soft alternation, no dated brown */
   table { width: 100%; border-collapse: collapse; margin: 8pt 0 14pt 0; font-size: 9.5pt; page-break-inside: auto; }
   thead { display: table-header-group; }
   tr { page-break-inside: avoid; page-break-after: auto; }
@@ -77,7 +77,7 @@ const HTML_TEMPLATE = `<!doctype html>
 
   blockquote { border-left: 3px solid var(--brand); padding-left: 12pt; color: var(--ink-mid); margin: 8pt 0; font-style: italic; background: var(--brand-soft); padding-top: 6pt; padding-bottom: 6pt; }
 
-  /* Vendor Directory — grid of cards with logo + name + links */
+  /* Vendor Directory · grid of cards with logo + name + links */
   .vendor-grid {
     display: flex;
     flex-wrap: wrap;
@@ -123,7 +123,7 @@ const HTML_TEMPLATE = `<!doctype html>
   .vendor-site { font-size: 8.5pt; color: var(--brand-dark); display: block; margin-top: 2pt; }
   .vendor-site-tm { color: var(--brand); }
 
-  /* Further Reading — article cards + video list */
+  /* Further Reading · article cards + video list */
   .reading-list {
     display: flex;
     flex-wrap: wrap;
@@ -255,7 +255,7 @@ const HTML_TEMPLATE = `<!doctype html>
   .score-mid { color: #0891B2; font-weight: 500; }
   .score-lo { color: #B45309; font-weight: 500; }
 
-  /* Strengths / Limitations / Best Fit blocks — visual distinction */
+  /* Strengths / Limitations / Best Fit blocks · visual distinction */
   h3 + p + strong + ul,
   h3 ~ ul {
     margin-top: 4pt;
@@ -266,7 +266,7 @@ const HTML_TEMPLATE = `<!doctype html>
   .compare-cons li { list-style: none; padding-left: 16pt; position: relative; }
   .compare-cons li::before { content: "−"; position: absolute; left: 0; color: #B45309; font-weight: 700; }
 
-  /* Cover banner — page 1 hero. On reste dans la zone imprimable (sans bleed
+  /* Cover banner · page 1 hero. On reste dans la zone imprimable (sans bleed
      full-width) pour éviter le clip Chrome/puppeteer. Bordure cyan en haut +
      coin arrondi en bas pour rester graphiquement fort sans déborder. */
   .cover-banner {
@@ -318,7 +318,7 @@ const HTML_TEMPLATE = `<!doctype html>
   <img class="cover-logo" src="{{LOGO_URI}}" alt="TreasuryMap" />
   <h1>Treasury Technology</h1>
   <div class="cover-subtitle">Long List &amp; Selection Framework</div>
-  <div class="cover-tagline">Based on the Treasury Technology Map — www.treasurymap.com</div>
+  <div class="cover-tagline">Based on the Treasury Technology Map · www.treasurymap.com</div>
 </div>
 {{CONTENT}}
 </body>
@@ -332,7 +332,7 @@ const HEADER_TEMPLATE = `
 
 const FOOTER_TEMPLATE = `
 <div style="font-family: Helvetica, Arial, sans-serif; font-size: 8pt; color: #6B7280; width: 100%; padding: 0 18mm; box-sizing: border-box; display: flex; justify-content: space-between;">
-  <span><a href="https://www.treasurymap.com" style="color: #0E7490; text-decoration: none;">www.treasurymap.com</a> — Confidential</span>
+  <span><a href="https://www.treasurymap.com" style="color: #0E7490; text-decoration: none;">www.treasurymap.com</a> · Confidential</span>
   <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
 </div>`;
 
@@ -418,7 +418,7 @@ function postProcessHtml(html) {
   let out = html;
 
   // 1) Mark the comparison scoring table.
-  // Detect tables whose body contains "OVERALL SCORE" — that's our matrix.
+  // Detect tables whose body contains "OVERALL SCORE" · that's our matrix.
   out = out.replace(/<table>([\s\S]*?)<\/table>/g, (match, inner) => {
     if (/OVERALL\s+SCORE/i.test(inner)) {
       return `<table class="compare-matrix">${inner}</table>`;
@@ -437,7 +437,7 @@ function postProcessHtml(html) {
     }
   );
 
-  // 3) For Strengths blocks — detect <strong>Strengths</strong> followed by <ul>
+  // 3) For Strengths blocks · detect <strong>Strengths</strong> followed by <ul>
   // and tag the UL with .compare-pros. Same for Limitations → .compare-cons.
   // Marked emits <p><strong>Strengths</strong></p><ul>... So we target that pair.
   out = out.replace(

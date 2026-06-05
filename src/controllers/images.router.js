@@ -73,7 +73,7 @@ const uploadImage = async (req, res) => {
   }
 };
 
-// Serve a self-hosted image. Public (no auth) — it's just an image URL used in
+// Serve a self-hosted image. Public (no auth) · it's just an image URL used in
 // <img src>. Long cache since rows are immutable once created.
 const getImage = async (req, res) => {
   try {

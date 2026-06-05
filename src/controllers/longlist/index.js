@@ -7,7 +7,7 @@ const os = require("os");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Limites payload — protège la DB et le coût Claude (chaque génération ≈ $0.20)
+// Limites payload · protège la DB et le coût Claude (chaque génération ≈ $0.20)
 const MAX_EMAIL_LEN = 254;
 const MAX_COMPANY_LEN = 200;
 const MAX_ANSWERS_BYTES = 50_000;
@@ -85,7 +85,7 @@ const generate = async (req, res, next) => {
     const { email, companyName, answers, categoryIds, website } = req.body || {};
 
     // Honeypot : champ "website" caché côté front. Si rempli, c'est un bot.
-    // On répond 202 fake (le bot pense que ça a marché) sans rien faire — pas
+    // On répond 202 fake (le bot pense que ça a marché) sans rien faire · pas
     // de DB, pas de Claude, pas de coût. On log pour stats.
     if (website && String(website).trim().length > 0) {
       console.log(
@@ -150,7 +150,7 @@ const listCategories = async (req, res, next) => {
   }
 };
 
-// Liste des vendors d'une catégorie donnée — utilisé par le form Compare Tools
+// Liste des vendors d'une catégorie donnée · utilisé par le form Compare Tools
 // (étape 2 : après que l'user a choisi sa catégorie, on lui propose les vendors).
 const listVendorsForCategory = async (req, res, next) => {
   try {
@@ -259,9 +259,9 @@ const generateComparison = async (req, res, next) => {
   }
 };
 
-// Serve the generated PDF directly — fallback when Cloudinary is not configured.
+// Serve the generated PDF directly · fallback when Cloudinary is not configured.
 // The file lives at /tmp/longlist-pdfs/longlist-{id}.pdf on the Railway container.
-// Note: ephemeral storage — file disappears on container restart.
+// Note: ephemeral storage · file disappears on container restart.
 async function downloadPdf(req, res) {
   const id = parseInt(req.params.id, 10);
   if (!id || isNaN(id)) return res.status(400).json({ error: "Invalid id" });
@@ -271,7 +271,7 @@ async function downloadPdf(req, res) {
 
   const type = report.reportType === "compare" ? "compare" : "longlist";
 
-  // 1) Preferred: the PDF kept in the DB — always available, survives restarts
+  // 1) Preferred: the PDF kept in the DB · always available, survives restarts
   //    and needs no Cloudinary.
   if (report.pdfData) {
     const buf = Buffer.from(report.pdfData, "base64");

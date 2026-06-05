@@ -12,7 +12,7 @@ const {
 
 // Rate limit STRICT sur /generate : chaque génération coûte ~$0.20 d'API Claude.
 // 5 générations / heure / IP en prod ; on garde aussi un compteur global "best effort"
-// (mémoire du process — reset au restart) pour limiter les abus à plus large échelle.
+// (mémoire du process · reset au restart) pour limiter les abus à plus large échelle.
 const generateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1h
   max: 5,

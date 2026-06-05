@@ -5,7 +5,7 @@
 // ("onboarding@resend.dev") can ONLY deliver to the Resend account owner
 // (relations@360crossmedia.com). So internal notifications are routed there via
 // the INTERNAL_INBOX constant. Once a domain is verified, set EMAIL_FROM to an
-// address on that domain and CONTACT_TO to the full team list — no code change.
+// address on that domain and CONTACT_TO to the full team list · no code change.
 const { Resend } = require("resend");
 const transporter = require("./nodemailer");
 

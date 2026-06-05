@@ -21,7 +21,7 @@ const Companies = require("../../models/companies.models");
  * @returns {string} markdown
  */
 function buildVendorDirectory(shortlist, siteUrl) {
-  const lines = ["", "## 5. VENDOR DIRECTORY — TOOLS PER CATEGORY", "", ""];
+  const lines = ["", "## 5. VENDOR DIRECTORY · TOOLS PER CATEGORY", "", ""];
   lines.push(
     "Logos, names and direct links for every vendor referenced in this report. " +
       "All entries are pulled live from the TreasuryMap registry."
@@ -58,7 +58,7 @@ function buildVendorDirectory(shortlist, siteUrl) {
   }
 
   if (total === 0) {
-    // Nothing to show — return empty string so the section is skipped entirely.
+    // Nothing to show · return empty string so the section is skipped entirely.
     return "";
   }
   return lines.join("\n");
@@ -118,7 +118,7 @@ async function buildFurtherReading(categoryIds, siteUrl, opts = {}) {
 
   if (articles.length === 0 && videos.length === 0) return "";
 
-  const lines = ["", "## 6. FURTHER READING — FROM THE TREASURYMAP NEWSLETTER", "", ""];
+  const lines = ["", "## 6. FURTHER READING · FROM THE TREASURYMAP NEWSLETTER", "", ""];
   lines.push(
     "Curated articles and videos from the TreasuryMap content library, " +
       "relevant to the categories you selected. Click through to dive deeper."
@@ -159,7 +159,7 @@ async function buildFurtherReading(categoryIds, siteUrl, opts = {}) {
       const vendorName = companyById.get(v.companyId) || "TreasuryMap";
       const href = v.url || "#";
       lines.push(
-        `<li><a href="${escapeAttr(href)}" target="_blank" rel="noopener"><strong>${escapeHtml(vendorName)}</strong> — ${titleSafe}</a></li>`
+        `<li><a href="${escapeAttr(href)}" target="_blank" rel="noopener"><strong>${escapeHtml(vendorName)}</strong> · ${titleSafe}</a></li>`
       );
     }
     lines.push("</ul>");

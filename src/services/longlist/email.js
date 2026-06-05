@@ -53,7 +53,7 @@ This long list was generated based on your answers to the profiling questions${
     companyName ? ` for ${companyName}` : ""
   }, and the providers currently listed in the Treasury Technology Map at www.treasurymap.com.
 
-The report is intended as a starting point for your selection process — we recommend validating each vendor through direct RFI engagement and reference checks before shortlisting.
+The report is intended as a starting point for your selection process · we recommend validating each vendor through direct RFI engagement and reference checks before shortlisting.
 
 Best regards,
 TreasuryMap
@@ -74,10 +74,10 @@ ${
 <p>This long list was generated based on your answers to the profiling questions${
     companyName ? ` for <strong>${escapeHtml(companyName)}</strong>` : ""
   }, and the providers currently listed in the Treasury Technology Map at <a href="https://www.treasurymap.com">www.treasurymap.com</a>.</p>
-<p>The report is intended as a starting point for your selection process — we recommend validating each vendor through direct RFI engagement and reference checks before shortlisting.</p>
+<p>The report is intended as a starting point for your selection process · we recommend validating each vendor through direct RFI engagement and reference checks before shortlisting.</p>
 <p>Best regards,<br/>TreasuryMap</p>
 <hr/>
-<p style="color:#888;font-size:11px">www.treasurymap.com — This is an automated message. Please do not reply directly.</p>`;
+<p style="color:#888;font-size:11px">www.treasurymap.com · This is an automated message. Please do not reply directly.</p>`;
 }
 
 function escapeHtml(s) {
@@ -114,7 +114,7 @@ async function sendReportEmail({ to, companyName, pdfPath, pdfUrl = null }) {
   const recipient = ON_SANDBOX ? INTERNAL_INBOX : to;
   const requester = ON_SANDBOX ? to : null;
   const subject =
-    `Your TreasuryMap shortlist${companyName ? ` — ${companyName}` : ""}` +
+    `Your TreasuryMap shortlist${companyName ? ` · ${companyName}` : ""}` +
     (requester ? ` (requested by ${requester})` : "");
 
   const message = {

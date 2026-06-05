@@ -3,7 +3,7 @@ const AuthServices = require("../services/auth.services");
 const UsersServices = require("../services/users.services");
 
 // Contact Us form. Delivered via Resend with proper authentication (clean
-// deliverability — no spam-foldering like the old empty-sender Gmail path).
+// deliverability · no spam-foldering like the old empty-sender Gmail path).
 // While on the Resend sandbox FROM, recipients are limited to the account owner,
 // so we route to the internal inbox; once a domain is verified and EMAIL_FROM is
 // updated, it delivers straight to the team list (CONTACT_TO: care@/studio@/...).

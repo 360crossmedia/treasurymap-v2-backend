@@ -3,7 +3,7 @@ const Categories = require("../../models/categories.models");
 const Companies = require("../../models/companies.models");
 
 // Filtre des entrées DB qui ressemblent à des placeholders de seed
-// (ex. "Category-5-Logo-1") ou à des noms vides — Claude n'a rien à en faire.
+// (ex. "Category-5-Logo-1") ou à des noms vides · Claude n'a rien à en faire.
 const PLACEHOLDER_NAME = /^(category|placeholder|test|seed)[-_\s]*\d/i;
 function isRealProvider(name) {
   if (!name || typeof name !== "string") return false;

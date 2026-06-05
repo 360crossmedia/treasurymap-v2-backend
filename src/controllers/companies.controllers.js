@@ -22,7 +22,7 @@ const createUserCompany = async (req, res, next) => {
     const data = { ...req.body };
     const isAdmin = Number(req.user && req.user.id) === 1;
     if (!isAdmin) {
-      // Vendors can only create their OWN draft listing — never live, never on
+      // Vendors can only create their OWN draft listing · never live, never on
       // the multiplayer map, never a paid client. Going live is admin-gated.
       data.userId = req.user.id;
       data.live = false;

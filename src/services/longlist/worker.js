@@ -26,7 +26,7 @@ async function processReport(reportId) {
     return { ok: false, reportId, status: "missing" };
   }
 
-  // Route les comparaisons vers leur pipeline dédié — short-circuit ici.
+  // Route les comparaisons vers leur pipeline dédié · short-circuit ici.
   if (report.reportType === "comparison") {
     return processComparison(report);
   }
@@ -63,10 +63,10 @@ async function processReport(reportId) {
       generationMs: result.generationMs,
     });
 
-    // 3. PDF (toujours sur disque local — utilisé pour la pièce jointe email)
+    // 3. PDF (toujours sur disque local · utilisé pour la pièce jointe email)
     const pdfResult = await pdf.renderPdf({
       markdown: fullMarkdown,
-      title: `TreasuryMap Long List${report.companyName ? ` — ${report.companyName}` : ""}`,
+      title: `TreasuryMap Long List${report.companyName ? ` · ${report.companyName}` : ""}`,
       fileName: `longlist-${report.id}.pdf`,
     });
 
@@ -80,7 +80,7 @@ async function processReport(reportId) {
     try { pdfData = fs.readFileSync(pdfResult.path).toString("base64"); } catch (_) {}
     await report.update({ pdfPath: persistedPath, pdfData });
 
-    // 5. Email — pièce jointe (locale) + lien (Cloudinary si dispo, fallback local)
+    // 5. Email · pièce jointe (locale) + lien (Cloudinary si dispo, fallback local)
     const emailResult = await email.sendReportEmail({
       to: report.email,
       companyName: report.companyName,
@@ -169,7 +169,7 @@ async function processComparison(report) {
 
     const pdfResult = await pdf.renderPdf({
       markdown: fullMarkdown,
-      title: `TreasuryMap Vendor Comparison${report.companyName ? ` — ${report.companyName}` : ""}`,
+      title: `TreasuryMap Vendor Comparison${report.companyName ? ` · ${report.companyName}` : ""}`,
       fileName: `compare-${report.id}.pdf`,
     });
 

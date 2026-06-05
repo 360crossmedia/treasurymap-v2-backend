@@ -8,7 +8,7 @@ const MAX_TOKENS = 16000;
 // On monte à 3 pour absorber les pics de charge Anthropic.
 const MAX_RETRIES = 3;
 // La génération prend typiquement 4-5 min. On laisse 10 min de marge avant
-// d'abandonner (timeout réseau, pas un kill abrupt — le SDK retentera après).
+// d'abandonner (timeout réseau, pas un kill abrupt · le SDK retentera après).
 const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
 const SYSTEM_PROMPT = fs.readFileSync(
@@ -132,7 +132,7 @@ function formatVendorsBlock(vendors) {
       }
       if (v.website && v.website !== "N/A") lines.push(`- Website: ${v.website}`);
       if (v.inTreasuryMap === false) {
-        lines.push("- *Note: this vendor is NOT currently mapped in TreasuryMap — limited internal data, public info only.*");
+        lines.push("- *Note: this vendor is NOT currently mapped in TreasuryMap · limited internal data, public info only.*");
       }
       return lines.join("\n");
     })
