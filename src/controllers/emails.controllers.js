@@ -2,11 +2,30 @@ const { sendMail, INTERNAL_INBOX } = require("../utils/mailer");
 const AuthServices = require("../services/auth.services");
 const UsersServices = require("../services/users.services");
 
-// Contact Us form. Delivers to the internal inbox with the visitor as reply-to,
-// so the team can answer them directly.
+// Contact Us form. Behaves exactly like the current live map: it delegates to
+// backend A's working contact endpoint (Gmail -> care@/contact@/studio@). If A
+// is unreachable, it falls back to the local Resend mailer (internal inbox).
+const LIVE_CONTACT_ENDPOINT =
+  "https://treasurymapbackend-production.up.railway.app/api/v1/email";
+
 const sendEmail = async (req, res, next) => {
+  const { company, message, name, email } = req.body;
+
+  // 1) Mirror the current map — delegate to backend A.
   try {
-    const { company, message, name, email } = req.body;
+    const r = await fetch(LIVE_CONTACT_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company, message, name, email }),
+    });
+    if (r.ok) return res.status(200).json({ ok: true });
+    console.error("Contact proxy to backend A failed:", r.status);
+  } catch (e) {
+    console.error("Contact proxy to backend A error:", e && e.message);
+  }
+
+  // 2) Fallback — local mailer (Resend -> internal inbox), reply-to the visitor.
+  try {
     await sendMail({
       to: INTERNAL_INBOX,
       replyTo: email,
