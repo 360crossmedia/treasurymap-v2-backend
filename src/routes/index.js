@@ -15,7 +15,6 @@ const mainPublicationRoutes = require("./mainPublication.router.js");
 const publicationsRoutes = require("./publications.router.js");
 const subOptionsRoutes = require("./subOptions.router.js");
 const longlistRoutes = require("./longlist.routes.js");
-const newsletterRoutes = require("./newsletter.router.js");
 const error = require("../middlewares/error.middleware");
 
 const routerApi = (app) => {
@@ -36,7 +35,6 @@ const routerApi = (app) => {
   app.use("/api/v1/publications", publicationsRoutes, error);
   app.use("/api/v1/subOptions", subOptionsRoutes, error);
   app.use("/api/v1/longlist", longlistRoutes, error);
-  app.use("/api/v1/newsletter", newsletterRoutes, error);
 };
 
 module.exports = routerApi;
