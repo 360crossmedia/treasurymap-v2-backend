@@ -38,7 +38,7 @@ async function sendMail({ to, subject, html, text, replyTo }) {
       subject,
       ...(html ? { html } : {}),
       ...(text ? { text } : {}),
-      ...(replyTo ? { reply_to: replyTo } : {}),
+      ...(replyTo ? { replyTo } : {}),
     });
     if (error) {
       const e = new Error(error.message || JSON.stringify(error));

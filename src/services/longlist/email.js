@@ -19,6 +19,14 @@ const { Resend } = require("resend");
 const FROM = process.env.EMAIL_FROM || "TreasuryMap <onboarding@resend.dev>";
 const FALLBACK_DIR = path.join(os.tmpdir(), "longlist-emails");
 
+// Until a domain is verified on Resend, the sandbox FROM (onboarding@resend.dev)
+// can only deliver to the account owner. So while we're on the sandbox we route
+// every shortlist to the internal inbox (the team always receives it, with the
+// requester as reply-to). Once EMAIL_FROM is a verified-domain address, this
+// flips automatically to delivering straight to the visitor.
+const INTERNAL_INBOX = process.env.INTERNAL_INBOX || "relations@360crossmedia.com";
+const ON_SANDBOX = /onboarding@resend\.dev/i.test(FROM);
+
 let _resend = null;
 function resendClient() {
   if (!_resend) {
@@ -98,18 +106,31 @@ async function sendReportEmail({ to, companyName, pdfPath, pdfUrl = null }) {
     throw new Error(`pdfPath introuvable: ${pdfPath}`);
   }
 
-  const subject = `Your TreasuryMap Long List${companyName ? ` — ${companyName}` : ""}`;
   const pdfBuffer = fs.readFileSync(pdfPath);
+
+  // On the sandbox: deliver to the team inbox, tag the subject/body with the
+  // requester, and set them as reply-to. Once a domain is verified, deliver
+  // straight to the visitor.
+  const recipient = ON_SANDBOX ? INTERNAL_INBOX : to;
+  const requester = ON_SANDBOX ? to : null;
+  const subject =
+    `Your TreasuryMap shortlist${companyName ? ` — ${companyName}` : ""}` +
+    (requester ? ` (requested by ${requester})` : "");
 
   const message = {
     from: FROM,
-    to,
+    to: recipient,
+    replyTo: to,
     subject,
-    text: bodyText({ companyName, pdfUrl }),
-    html: bodyHtml({ companyName, pdfUrl }),
+    text:
+      (requester ? `Requested by: ${requester}\n\n` : "") +
+      bodyText({ companyName, pdfUrl }),
+    html:
+      (requester ? `<p><strong>Requested by:</strong> ${escapeHtml(requester)}</p>` : "") +
+      bodyHtml({ companyName, pdfUrl }),
     attachments: [
       {
-        filename: "TreasuryMap-LongList.pdf",
+        filename: "TreasuryMap-shortlist.pdf",
         content: pdfBuffer, // Resend SDK accepts Buffer directly
         contentType: "application/pdf",
       },
