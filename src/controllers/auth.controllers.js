@@ -1,4 +1,5 @@
 const AuthServices = require("../services/auth.services");
+const UsersServices = require("../services/users.services");
 
 const register = async (req, res) => {
   try {
@@ -95,9 +96,57 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+// Admin-only: mint a magic edit-link token for a vendor (by userId or email).
+// The front turns this into a /linkupdate/<token> URL to email to the vendor.
+// Replaces the old scheme where every vendor shared the password "12345".
+const createMagicLink = async (req, res, next) => {
+  try {
+    const { userId, email } = req.body;
+    let user = null;
+    if (userId) user = await AuthServices.findUserById(userId);
+    else if (email) user = await UsersServices.getUserIdByEmail(email);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const token = AuthServices.genMagicToken(user.id);
+    return res.status(200).json({ token, userId: user.id, email: user.email });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Public, throttled: exchange a valid magic-link token for a normal session
+// (same response shape as /login). The token is verified server-side; the user
+// id comes from the token, never the client.
+const magicLogin = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: "Missing token" });
+    let userId;
+    try {
+      userId = AuthServices.verifyMagicToken(token);
+    } catch (e) {
+      return res
+        .status(401)
+        .json({ message: "This edit link is invalid or has expired." });
+    }
+    const user = await AuthServices.findUserById(userId);
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: "This edit link is invalid or has expired." });
+    }
+    const userData = { username: user.fullName, id: user.id, email: user.email };
+    userData.token = AuthServices.genToken(userData);
+    return res.status(200).json(userData);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   updatePassword,
   resetPassword,
+  createMagicLink,
+  magicLogin,
 };

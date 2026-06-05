@@ -13,8 +13,9 @@ const requireAuth = (req, res, next) => {
   if (!token) return res.status(401).json({ message: "Authentication required" });
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS512"] });
-    // A short-lived password-reset token must never authenticate a session.
-    if (req.user && req.user.purpose === "reset") {
+    // Scoped tokens (reset, magic) are NOT sessions: only real login/magic-login
+    // session tokens (no `purpose`) may authenticate a request.
+    if (req.user && req.user.purpose) {
       return res.status(401).json({ message: "Invalid or expired session" });
     }
     next();
@@ -38,7 +39,7 @@ const optionalAuth = (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS512"] });
-      if (decoded && decoded.purpose !== "reset") req.user = decoded;
+      if (decoded && !decoded.purpose) req.user = decoded;
     } catch (_) {}
   }
   next();

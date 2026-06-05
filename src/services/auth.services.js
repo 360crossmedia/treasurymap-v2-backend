@@ -57,6 +57,29 @@ class AuthServices {
     return id;
   }
 
+  // Mint a long-lived, single-purpose "magic" edit link for a vendor. The
+  // signed token IS the credential (replaces the old shared 12345 password).
+  // 30 days; admin re-issues as needed. Rotating JWT_SECRET invalidates all.
+  static genMagicToken(userId) {
+    return AuthServices.genToken({ userId, purpose: "magic" }, "30d");
+  }
+
+  // Verify a magic edit-link token server-side. Throws if invalid/expired/wrong
+  // purpose. Returns the target user id (the token carries only a plain id).
+  static verifyMagicToken(token) {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ["HS512"],
+    });
+    if (decoded.purpose !== "magic") throw new Error("Not a magic token");
+    const id = decoded.userId;
+    if (!id) throw new Error("Malformed magic token");
+    return id;
+  }
+
+  static async findUserById(id) {
+    return Users.findByPk(id);
+  }
+
   static async updatePassword(id, password) {
     try {
       const result = await Users.update(
