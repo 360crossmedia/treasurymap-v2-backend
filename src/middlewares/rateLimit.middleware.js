@@ -12,4 +12,14 @@ const authLimiter = rateLimit({
   message: { message: "Too many attempts. Please try again in a few minutes." },
 });
 
-module.exports = { authLimiter };
+// Throttle the email-triggering endpoints (contact form, signup alert, internal
+// alerts) to prevent using them to flood the internal inbox.
+const emailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests. Please try again in a few minutes." },
+});
+
+module.exports = { authLimiter, emailLimiter };

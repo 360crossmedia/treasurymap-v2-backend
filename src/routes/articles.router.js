@@ -9,12 +9,16 @@ const {
   updateArticle,
 } = require("../controllers/articles.controllers");
 const { requireAuth } = require("../middlewares/auth.middleware");
+const {
+  ownsCompanyByParam,
+  ownsArticle,
+} = require("../middlewares/ownership.middleware");
 
 router.get("/", GetAllArticles);
 router.get("/all/:companyId", GetArticleByCompanyId);
 router.get("/:articleId", GetArticleById);
-router.post("/create/:companyId", requireAuth, CreateArticle);
-router.put("/:articleId", requireAuth, updateArticle);
-router.delete("/:articleid", requireAuth, DeleteArticle);
+router.post("/create/:companyId", requireAuth, ownsCompanyByParam("companyId"), CreateArticle);
+router.put("/:articleId", requireAuth, ownsArticle, updateArticle);
+router.delete("/:articleid", requireAuth, ownsArticle, DeleteArticle);
 
 module.exports = router;

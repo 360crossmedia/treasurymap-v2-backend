@@ -11,6 +11,17 @@ const appendices = require("./appendices");
 // Override via env in prod; fallback fits local dev.
 const SITE_URL = process.env.PUBLIC_SITE_URL || "https://treasurymap-v2-production.up.railway.app";
 
+// Backend base URL for the token-gated PDF download link included in the email
+// (used as the online fallback when Cloudinary is not configured).
+const API_URL = process.env.PUBLIC_API_URL || "https://treasurymap-v2-back-production.up.railway.app";
+
+// Build the secure online link to a report's PDF (requires its access token).
+function pdfDownloadUrl(report) {
+  return report.accessToken
+    ? `${API_URL}/api/v1/longlist/pdf/${report.id}?t=${report.accessToken}`
+    : null;
+}
+
 /**
  * Pipeline : matching DB → Claude → PDF → email.
  * Met à jour le statut du LongListReport à chaque étape.
@@ -85,7 +96,7 @@ async function processReport(reportId) {
       to: report.email,
       companyName: report.companyName,
       pdfPath: pdfResult.path,
-      pdfUrl: cloudResult.ok ? cloudResult.url : null,
+      pdfUrl: cloudResult.ok ? cloudResult.url : pdfDownloadUrl(report),
     });
 
     await report.update({
@@ -185,7 +196,7 @@ async function processComparison(report) {
       to: report.email,
       companyName: report.companyName,
       pdfPath: pdfResult.path,
-      pdfUrl: cloudResult.ok ? cloudResult.url : null,
+      pdfUrl: cloudResult.ok ? cloudResult.url : pdfDownloadUrl(report),
     });
 
     await report.update({ status: "sent", emailedAt: new Date() });

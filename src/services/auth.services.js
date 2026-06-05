@@ -50,7 +50,9 @@ class AuthServices {
       algorithms: ["HS512"],
     });
     if (decoded.purpose !== "reset") throw new Error("Not a reset token");
-    const id = decoded.userId && decoded.userId.id;
+    // userId is a plain id (we no longer embed the full user record, which
+    // would leak the bcrypt hash and email inside the emailed link).
+    const id = decoded.userId;
     if (!id) throw new Error("Malformed reset token");
     return id;
   }

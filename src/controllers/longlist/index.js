@@ -4,8 +4,18 @@ const matching = require("../../services/longlist/matching");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const crypto = require("crypto");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Constant-time compare of two short strings (avoids leaking the token via
+// timing). Returns false on any length mismatch.
+function safeEqual(a, b) {
+  const ba = Buffer.from(String(a));
+  const bb = Buffer.from(String(b));
+  if (ba.length === 0 || ba.length !== bb.length) return false;
+  return crypto.timingSafeEqual(ba, bb);
+}
 
 // Limites payload · protège la DB et le coût Claude (chaque génération ≈ $0.20)
 const MAX_EMAIL_LEN = 254;
@@ -110,6 +120,7 @@ const generate = async (req, res, next) => {
       answers,
       categoryIds,
       status: "pending",
+      accessToken: crypto.randomBytes(24).toString("hex"),
     });
 
     worker.enqueue(report.id);
@@ -130,11 +141,12 @@ const getStatus = async (req, res, next) => {
     const { id } = req.params;
     if (!/^\d+$/.test(String(id))) return res.status(400).json({ error: "id invalide" });
     const report = await LongListReports.findByPk(id, {
-      attributes: ["id", "status", "emailedAt", "errorMessage", "createdAt", "pdfPath"],
+      attributes: ["id", "status", "emailedAt", "errorMessage", "createdAt"],
     });
     if (!report) return res.status(404).json({ error: "Report introuvable" });
-    // pdfReady lets the front show a guaranteed Download button.
-    const pdfReady = report.status === "sent" || !!report.pdfPath;
+    // pdfReady lets the front know the report is delivered. We no longer return
+    // pdfPath here (it could leak a direct/Cloudinary path bypassing the token).
+    const pdfReady = report.status === "sent";
     res.json({ ...report.toJSON(), pdfReady });
   } catch (err) {
     next(err);
@@ -244,6 +256,7 @@ const generateComparison = async (req, res, next) => {
       vendorIds,
       answers: { context: context || "" },
       status: "pending",
+      accessToken: crypto.randomBytes(24).toString("hex"),
     });
 
     worker.enqueue(report.id);
@@ -268,6 +281,13 @@ async function downloadPdf(req, res) {
 
   const report = await LongListReports.findByPk(id);
   if (!report) return res.status(404).json({ error: "Report not found" });
+
+  // Require the per-report access token (?t=...). Without it this endpoint was
+  // an IDOR leaking any visitor's PDF by sequential id.
+  const token = req.query.t || req.query.token;
+  if (!report.accessToken || !safeEqual(token, report.accessToken)) {
+    return res.status(403).json({ error: "Invalid or missing access token" });
+  }
 
   const type = report.reportType === "compare" ? "compare" : "longlist";
 

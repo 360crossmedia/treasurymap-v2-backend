@@ -60,6 +60,12 @@ const LongListReports = db.define(
       type: DataTypes.TEXT,
       field: "pdf_data",
     },
+    // Unguessable token required to download the PDF. Without it, the download
+    // endpoint was an IDOR: any sequential id leaked another visitor's report.
+    accessToken: {
+      type: DataTypes.STRING,
+      field: "access_token",
+    },
     errorMessage: {
       type: DataTypes.TEXT,
       field: "error_message",

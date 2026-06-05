@@ -60,16 +60,17 @@ class CompaniesServices {
     }
   }
 
-  static async updateCompanyDataService(companyId, updatedData) {
+  static async updateCompanyDataService(companyId, updatedData, fields) {
     try {
       const previusValue = await Companies.findOne({
         where: { id: companyId },
       });
-      const company = await Companies.update(updatedData, {
-        where: {
-          id: companyId,
-        },
-      });
+      const options = { where: { id: companyId } };
+      // When a whitelist is provided, Sequelize only writes those attributes,
+      // so unknown/forbidden keys (id, timestamps, junk) are ignored even if
+      // present in the body.
+      if (Array.isArray(fields) && fields.length) options.fields = fields;
+      const company = await Companies.update(updatedData, options);
       if (company) return previusValue;
     } catch (error) {
       throw error;

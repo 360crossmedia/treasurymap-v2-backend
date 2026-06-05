@@ -58,7 +58,6 @@ The report is intended as a starting point for your selection process · we reco
 Best regards,
 TreasuryMap
 
-—
 www.treasurymap.com
 This is an automated message. Please do not reply directly.`;
 }
@@ -68,7 +67,7 @@ function bodyHtml({ companyName, pdfUrl }) {
 <p>Your <strong>TreasuryMap Long List</strong> report is attached.</p>
 ${
   pdfUrl
-    ? `<p>You can also <a href="${escapeHtml(pdfUrl)}" style="color:#0E7490;font-weight:600">access the report online</a>.</p>`
+    ? `<p>You can also <a href="${escapeHtml(pdfUrl)}" style="color:#2f6fe0;font-weight:600">access the report online</a>.</p>`
     : ""
 }
 <p>This long list was generated based on your answers to the profiling questions${

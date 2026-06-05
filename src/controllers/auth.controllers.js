@@ -2,8 +2,16 @@ const AuthServices = require("../services/auth.services");
 
 const register = async (req, res) => {
   try {
-    const user = req.body;
-    const result = await AuthServices.register(user);
+    // Whitelist fields. Passing req.body straight to Users.create allowed mass
+    // assignment, e.g. an explicit id:1 could seize the admin identity (admin =
+    // user id 1) when the table is empty. Only these fields may be set.
+    const { fullName, email, password } = req.body;
+    if (!fullName || !email || !password) {
+      return res
+        .status(400)
+        .json({ message: "fullName, email and password are required" });
+    }
+    const result = await AuthServices.register({ fullName, email, password });
     if (result) {
       res.status(201).json(result);
     } else {

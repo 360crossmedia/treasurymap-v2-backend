@@ -2,6 +2,18 @@ const CompaniesServices = require("../services/companies.service");
 const UsersServices = require("../services/users.services");
 const { slugify } = require("../utils/slugify");
 
+// Columns a company update is allowed to write. Excludes id / timestamps so a
+// crafted body can't overwrite the primary key or inject junk columns. The
+// admin-gated fields (userId/live/multiplayerMap/clientPackage) stay in the
+// list so admins can set them, but the non-admin path strips them from `data`
+// before the update, so a vendor still cannot.
+const COMPANY_UPDATABLE_FIELDS = [
+  "name", "description", "creationDate", "turnover", "employees", "location",
+  "userId", "companyWebsite", "companyOffices", "companyCategories",
+  "companySubcategories", "maincategory", "productName", "productVersion",
+  "logo", "keywords", "live", "showTurnover", "multiplayerMap", "clientPackage",
+];
+
 const getCompanyUserOwn = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -99,7 +111,11 @@ const upadateCompanyData = async (req, res, next) => {
       delete data.clientPackage;
       delete data.userId;
     }
-    const result = await CompaniesServices.updateCompanyDataService(companyId, data);
+    const result = await CompaniesServices.updateCompanyDataService(
+      companyId,
+      data,
+      COMPANY_UPDATABLE_FIELDS
+    );
     res.status(200).json(result);
   } catch (error) {
     next(error);

@@ -22,8 +22,28 @@ cloudinary.config({
   secure: true,
 });
 
+// Restrict cross-origin browser access to the known frontend origins (the API
+// serves auth + write endpoints, so a wildcard let any site call it). Override
+// the list in prod with CORS_ORIGINS (comma-separated). Requests with no Origin
+// header (curl, server-to-server, health checks) are allowed.
+const ALLOWED_ORIGINS = (
+  process.env.CORS_ORIGINS ||
+  [
+    "https://treasurymap-v2-production.up.railway.app",
+    "https://treasurymap.com",
+    "https://www.treasurymap.com",
+    "http://localhost:3000",
+  ].join(",")
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 const corsOptions = {
-  origin: "*",
+  origin(origin, cb) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS"));
+  },
 };
 
 app.use(bodyParser.json({ limit: "3mb" }));
