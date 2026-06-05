@@ -46,12 +46,42 @@ const login = async (req, res) => {
   }
 };
 
+// Logged-in password change (My Account, or admin editing a user). Auth is
+// enforced by requireAuth on the route; here we restrict to the account owner
+// or the admin (id 1) so a logged-in user can't change someone else's password.
 const updatePassword = async (req, res, next) => {
   try {
     const { userId } = req.params;
+    if (Number(req.user.id) !== Number(userId) && Number(req.user.id) !== 1) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
     const { password } = req.body;
     const result = await AuthServices.updatePassword(userId, password);
     res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Forgot-password flow (not logged in). The signed, short-lived reset token IS
+// the authorization and is verified server-side; the target user id comes from
+// the token, never from the client.
+const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ message: "Missing token or password" });
+    }
+    let userId;
+    try {
+      userId = AuthServices.verifyResetToken(token);
+    } catch (e) {
+      return res
+        .status(401)
+        .json({ message: "This reset link is invalid or has expired." });
+    }
+    await AuthServices.updatePassword(userId, password);
+    return res.status(200).json({ message: "Password updated" });
   } catch (error) {
     next(error);
   }
@@ -61,4 +91,5 @@ module.exports = {
   register,
   login,
   updatePassword,
+  resetPassword,
 };

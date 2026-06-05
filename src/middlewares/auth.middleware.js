@@ -13,6 +13,10 @@ const requireAuth = (req, res, next) => {
   if (!token) return res.status(401).json({ message: "Authentication required" });
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS512"] });
+    // A short-lived password-reset token must never authenticate a session.
+    if (req.user && req.user.purpose === "reset") {
+      return res.status(401).json({ message: "Invalid or expired session" });
+    }
     next();
   } catch (e) {
     return res.status(401).json({ message: "Invalid or expired session" });
@@ -33,7 +37,8 @@ const optionalAuth = (req, res, next) => {
   const token = getToken(req);
   if (token) {
     try {
-      req.user = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS512"] });
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS512"] });
+      if (decoded && decoded.purpose !== "reset") req.user = decoded;
     } catch (_) {}
   }
   next();

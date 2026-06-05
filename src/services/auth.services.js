@@ -29,16 +29,30 @@ class AuthServices {
     }
   }
 
-  static genToken(data) {
+  static genToken(data, expiresIn = "7d") {
     try {
       const token = jwt.sign(data, process.env.JWT_SECRET, {
         algorithm: "HS512",
-        expiresIn: "7d",
+        expiresIn,
       });
       return token;
     } catch (error) {
       throw error;
     }
+  }
+
+  // Verify a password-reset token server-side. The token is signed with
+  // JWT_SECRET and scoped with purpose:"reset" so a session token can't be
+  // used to reset (and vice-versa). Throws if invalid/expired/wrong purpose.
+  // Returns the target user id (never trust a client-decoded id).
+  static verifyResetToken(token) {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ["HS512"],
+    });
+    if (decoded.purpose !== "reset") throw new Error("Not a reset token");
+    const id = decoded.userId && decoded.userId.id;
+    if (!id) throw new Error("Malformed reset token");
+    return id;
   }
 
   static async updatePassword(id, password) {

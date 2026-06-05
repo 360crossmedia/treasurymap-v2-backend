@@ -76,7 +76,8 @@ const restorePassword = async (req, res, next) => {
     if (!userId) {
       res.status(400).json({ message: "Wrong Email" });
     } else {
-      const token = AuthServices.genToken({ userId });
+      // Short-lived, reset-scoped token. Verified server-side on use.
+      const token = AuthServices.genToken({ userId, purpose: "reset" }, "15m");
       const result = await sendMail({
         to: email,
         subject: "Restore Password",
