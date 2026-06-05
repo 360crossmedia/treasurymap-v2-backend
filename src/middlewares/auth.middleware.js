@@ -27,4 +27,16 @@ const requireAdmin = (req, res, next) =>
     return res.status(403).json({ message: "Admin only" });
   });
 
-module.exports = { requireAuth, requireAdmin };
+// Decode the token if present (sets req.user) but never rejects. Lets a public
+// endpoint optionally enrich its response for authenticated callers.
+const optionalAuth = (req, res, next) => {
+  const token = getToken(req);
+  if (token) {
+    try {
+      req.user = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS512"] });
+    } catch (_) {}
+  }
+  next();
+};
+
+module.exports = { requireAuth, requireAdmin, optionalAuth };

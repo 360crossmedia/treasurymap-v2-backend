@@ -10,9 +10,9 @@ const {
   getAllCompanies,
   companyHasMediaContent,
 } = require("../controllers/companies.controllers");
-const { requireAuth, requireAdmin } = require("../middlewares/auth.middleware");
+const { requireAuth, requireAdmin, optionalAuth } = require("../middlewares/auth.middleware");
 
-router.get("/", getAllCompanies);
+router.get("/", optionalAuth, getAllCompanies);
 router.get("/by-slug/:slug", getCompanyBySlug);
 router.get("/:companyId", getCompanyData);
 router.get("/getByOwner/:userId", getCompanyUserOwn);

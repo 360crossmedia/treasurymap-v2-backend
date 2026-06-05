@@ -1,4 +1,5 @@
 const CompaniesServices = require("../services/companies.service");
+const UsersServices = require("../services/users.services");
 const { slugify } = require("../utils/slugify");
 
 const getCompanyUserOwn = async (req, res, next) => {
@@ -43,11 +44,24 @@ const createUserCompany = async (req, res, next) => {
 const getAllCompanies = async (req, res, next) => {
   try {
     const result = await CompaniesServices.getAllCompaniesServices();
-    if (result) {
-      res.status(200).json(result);
-    } else if (!result) {
-      res.status(400).json({ message: "GetAll companies not found" });
+    if (!result) {
+      return res.status(400).json({ message: "GetAll companies not found" });
     }
+    // For an authenticated ADMIN only, attach the owner's email + name so the
+    // admin dashboard can contact leads. Never exposed to public/anonymous or
+    // non-admin callers (no privacy leak on the public map).
+    if (Array.isArray(result) && Number(req.user && req.user.id) === 1) {
+      const users = await UsersServices.getAllUsers().catch(() => []);
+      const byId = {};
+      (Array.isArray(users) ? users : []).forEach((u) => { byId[u.id] = u; });
+      const enriched = result.map((c) => {
+        const j = typeof c.toJSON === "function" ? c.toJSON() : c;
+        const u = byId[j.userId];
+        return { ...j, ownerEmail: (u && u.email) || null, ownerName: (u && u.fullName) || null };
+      });
+      return res.status(200).json(enriched);
+    }
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
