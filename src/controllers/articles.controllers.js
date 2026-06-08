@@ -15,7 +15,11 @@ const CreateArticle = async (req, res, next) => {
 const GetAllArticles = async (req, res) => {
   try {
     const result = await ArticlesServices.GetAllArticlesService();
-    res.status(200).json(result);
+    // Public callers only see published (live) articles; admin sees all drafts.
+    const isAdmin = Number(req.user && req.user.id) === 1;
+    const list =
+      isAdmin || !Array.isArray(result) ? result : result.filter((a) => a.live);
+    res.status(200).json(list);
   } catch (error) {
     res.status(400).json(error);
   }

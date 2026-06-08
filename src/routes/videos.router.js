@@ -8,13 +8,14 @@ const {
   getVideoById,
   updateVideo,
 } = require("../controllers/videos.controllers");
-const { requireAuth } = require("../middlewares/auth.middleware");
+const { requireAuth, optionalAuth } = require("../middlewares/auth.middleware");
 const {
   ownsCompanyByParam,
   ownsVideo,
 } = require("../middlewares/ownership.middleware");
 
-router.get("/", GetAllVideos);
+// optionalAuth: admin (token) gets all incl. drafts; public gets live-only.
+router.get("/", optionalAuth, GetAllVideos);
 router.get("/all/:companyId", GetVideoByCompanyId);
 router.get("/:videoId", getVideoById);
 router.post("/create/:companyId", requireAuth, ownsCompanyByParam("companyId"), CreateVideo);

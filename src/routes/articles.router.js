@@ -8,13 +8,14 @@ const {
   GetArticleById,
   updateArticle,
 } = require("../controllers/articles.controllers");
-const { requireAuth } = require("../middlewares/auth.middleware");
+const { requireAuth, optionalAuth } = require("../middlewares/auth.middleware");
 const {
   ownsCompanyByParam,
   ownsArticle,
 } = require("../middlewares/ownership.middleware");
 
-router.get("/", GetAllArticles);
+// optionalAuth: admin (token) gets all incl. drafts; public gets live-only.
+router.get("/", optionalAuth, GetAllArticles);
 router.get("/all/:companyId", GetArticleByCompanyId);
 router.get("/:articleId", GetArticleById);
 router.post("/create/:companyId", requireAuth, ownsCompanyByParam("companyId"), CreateArticle);

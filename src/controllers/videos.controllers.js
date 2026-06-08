@@ -15,7 +15,11 @@ const CreateVideo = async (req, res, next) => {
 const GetAllVideos = async (req, res) => {
   try {
     const result = await VideosServices.GetAllVideosService();
-    res.status(200).json(result);
+    // Public callers only see published (live) videos; admin sees all drafts.
+    const isAdmin = Number(req.user && req.user.id) === 1;
+    const list =
+      isAdmin || !Array.isArray(result) ? result : result.filter((v) => v.live);
+    res.status(200).json(list);
   } catch (error) {
     res.status(400).json(error);
   }
