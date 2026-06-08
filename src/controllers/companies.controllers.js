@@ -18,13 +18,9 @@ const getCompanyUserOwn = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const result = await CompaniesServices.getOwnedService(userId);
-    if (result) {
-      res.status(200).json(result);
-    } else if (!result) {
-      res
-        .status(400)
-        .json({ message: "Not companies found. Controller response" });
-    }
+    // No companies for this owner is a valid empty state (e.g. a brand-new
+    // vendor), not an error. Always return 200 with an array.
+    return res.status(200).json(Array.isArray(result) ? result : []);
   } catch (error) {
     next(error);
   }
