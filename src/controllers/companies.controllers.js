@@ -148,7 +148,9 @@ const getCompanyBySlug = async (req, res, next) => {
     if (!Array.isArray(all)) {
       return res.status(404).json({ message: "Company not found" });
     }
-    const match = all.find((c) => slugify(c.name) === slug);
+    // Public provider page: only LIVE companies are reachable. A draft / unpublished
+    // listing must not get a public, indexable page. (live wins on slug collisions.)
+    const match = all.find((c) => c.live && slugify(c.name) === slug);
     if (!match) {
       return res.status(404).json({ message: "Company not found" });
     }

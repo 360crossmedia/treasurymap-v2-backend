@@ -99,9 +99,11 @@ async function processReport(reportId) {
       pdfUrl: cloudResult.ok ? cloudResult.url : pdfDownloadUrl(report),
     });
 
+    // Only mark "sent" if the email actually went out. A failed send must not
+    // tell the visitor to check an inbox that will never receive anything.
     await report.update({
-      status: "sent",
-      emailedAt: new Date(),
+      status: emailResult.sent ? "sent" : "failed",
+      emailedAt: emailResult.sent ? new Date() : null,
     });
 
     console.log(
@@ -199,7 +201,10 @@ async function processComparison(report) {
       pdfUrl: cloudResult.ok ? cloudResult.url : pdfDownloadUrl(report),
     });
 
-    await report.update({ status: "sent", emailedAt: new Date() });
+    await report.update({
+      status: emailResult.sent ? "sent" : "failed",
+      emailedAt: emailResult.sent ? new Date() : null,
+    });
 
     console.log(
       `[compare worker] report ${report.id} OK (vendors=${vendors.length}, email=${emailResult.mode}, ` +
