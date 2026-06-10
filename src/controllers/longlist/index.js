@@ -153,6 +153,26 @@ const getStatus = async (req, res, next) => {
   }
 };
 
+// Admin only: list every shortlist / comparison request (the leads). Returns the
+// lightweight fields for a table (never the heavy reportMd / pdfData). The
+// accessToken is included so the admin UI can build the per-report PDF download
+// link; the route is requireAdmin so this is not public.
+const listReports = async (req, res, next) => {
+  try {
+    const reports = await LongListReports.findAll({
+      attributes: [
+        "id", "email", "companyName", "categoryIds", "vendorIds",
+        "reportType", "status", "createdAt", "emailedAt", "accessToken",
+      ],
+      order: [["createdAt", "DESC"]],
+      limit: 2000,
+    });
+    res.json(reports);
+  } catch (err) {
+    next(err);
+  }
+};
+
 const listCategories = async (req, res, next) => {
   try {
     const cats = await matching.getAllCategories();
@@ -323,6 +343,7 @@ async function downloadPdf(req, res) {
 module.exports = {
   generate,
   getStatus,
+  listReports,
   listCategories,
   listVendorsForCategory,
   generateComparison,
