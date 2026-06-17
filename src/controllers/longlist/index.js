@@ -1,4 +1,5 @@
 const LongListReports = require("../../models/longlistReports.models");
+const ShortlistLeads = require("../../models/shortlistLeads.models");
 const worker = require("../../services/longlist/worker");
 const matching = require("../../services/longlist/matching");
 const fs = require("fs");
@@ -153,10 +154,33 @@ const getStatus = async (req, res, next) => {
   }
 };
 
-// Admin only: list every shortlist / comparison request (the leads). Returns the
-// lightweight fields for a table (never the heavy reportMd / pdfData). The
-// accessToken is included so the admin UI can build the per-report PDF download
-// link; the route is requireAdmin so this is not public.
+// Public, fire-and-forget: capture the visitor's email the moment it is valid,
+// so an abandoned questionnaire still leaves a contactable lead. Never blocks the
+// form (always 204), silently ignores invalid input and honeypot hits.
+const captureLead = async (req, res, next) => {
+  try {
+    const { email, companyName, website } = req.body || {};
+    if (website && String(website).trim().length > 0) return res.status(204).end(); // bot
+    if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email) || email.length > MAX_EMAIL_LEN) {
+      return res.status(204).end();
+    }
+    await ShortlistLeads.create({
+      email: email.trim().toLowerCase(),
+      companyName:
+        typeof companyName === "string" && companyName.trim()
+          ? companyName.trim().slice(0, MAX_COMPANY_LEN)
+          : null,
+    });
+    return res.status(204).end();
+  } catch (_) {
+    return res.status(204).end(); // never surface capture errors to the form
+  }
+};
+
+// Admin only: list every shortlist / comparison request (the leads). Merges the
+// completed reports (with a downloadable PDF) and the "started but not completed"
+// partial leads, dropping partials whose email already has a full report. Returns
+// lightweight fields only (never the heavy reportMd / pdfData).
 const listReports = async (req, res, next) => {
   try {
     const reports = await LongListReports.findAll({
@@ -167,7 +191,36 @@ const listReports = async (req, res, next) => {
       order: [["createdAt", "DESC"]],
       limit: 2000,
     });
-    res.json(reports);
+    const completedEmails = new Set(
+      reports.map((r) => String(r.email || "").toLowerCase())
+    );
+    const partials = await ShortlistLeads.findAll({
+      order: [["createdAt", "DESC"]],
+      limit: 2000,
+    });
+    const seenPartial = new Set();
+    const started = [];
+    for (const p of partials) {
+      const key = String(p.email || "").toLowerCase();
+      if (!key || completedEmails.has(key) || seenPartial.has(key)) continue;
+      seenPartial.add(key);
+      started.push({
+        id: `lead-${p.id}`,
+        email: p.email,
+        companyName: p.companyName,
+        categoryIds: [],
+        vendorIds: [],
+        reportType: "longlist",
+        status: "started",
+        createdAt: p.createdAt,
+        emailedAt: null,
+        accessToken: null,
+      });
+    }
+    const all = [...reports.map((r) => r.toJSON()), ...started].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    res.json(all);
   } catch (err) {
     next(err);
   }
@@ -343,6 +396,7 @@ async function downloadPdf(req, res) {
 module.exports = {
   generate,
   getStatus,
+  captureLead,
   listReports,
   listCategories,
   listVendorsForCategory,

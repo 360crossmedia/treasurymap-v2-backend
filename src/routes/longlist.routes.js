@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   generate,
   getStatus,
+  captureLead,
   listReports,
   listCategories,
   listVendorsForCategory,
@@ -38,6 +39,7 @@ router.get("/categories", readLimiter, listCategories);
 router.get("/vendors/:categoryId", readLimiter, listVendorsForCategory);
 router.post("/generate", generateLimiter, generate);
 router.post("/compare", generateLimiter, generateComparison);
+router.post("/lead", readLimiter, captureLead);
 router.get("/reports", requireAdmin, listReports);
 router.get("/status/:id", readLimiter, getStatus);
 router.get("/pdf/:id", readLimiter, downloadPdf);
