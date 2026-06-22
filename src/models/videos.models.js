@@ -27,7 +27,7 @@ const Videos = db.define("videos", {
     onDelete: "CASCADE",
   },
   introduction: {
-    type: DataTypes.STRING(500),
+    type: DataTypes.STRING(800),
   },
   coverImage: {
     type: DataTypes.STRING,
