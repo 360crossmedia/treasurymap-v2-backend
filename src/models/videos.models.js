@@ -29,6 +29,11 @@ const Videos = db.define("videos", {
   introduction: {
     type: DataTypes.STRING(800),
   },
+  // Rich HTML description (Quill), like articles. Lets a video have a formatted
+  // description (line breaks, bold, lists) instead of the plain introduction.
+  body: {
+    type: DataTypes.TEXT,
+  },
   coverImage: {
     type: DataTypes.STRING,
     field: "cover_image",
