@@ -12,6 +12,7 @@ const COMPANY_UPDATABLE_FIELDS = [
   "userId", "companyWebsite", "companyOffices", "companyCategories",
   "companySubcategories", "maincategory", "productName", "productVersion",
   "logo", "keywords", "live", "showTurnover", "multiplayerMap", "clientPackage",
+  "countriesCount",
 ];
 
 const getCompanyUserOwn = async (req, res, next) => {

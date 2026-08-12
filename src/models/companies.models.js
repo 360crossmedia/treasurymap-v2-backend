@@ -95,6 +95,15 @@ const Companies = db.define("companies", {
     allowNull: true,
     field: "client_package",
   },
+  // Self-declared country reach. Lets a globally-present vendor state a number
+  // (e.g. 100) instead of ticking 100 individual offices. When set, it drives
+  // the map's "Countries covered" filter; otherwise the office list is counted.
+  // Column auto-created by db.sync({ alter: true }).
+  countriesCount: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: "countries_count",
+  },
 });
 
 Companies.hasMany(CompanyCategorySubOption, {
