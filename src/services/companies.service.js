@@ -1,20 +1,71 @@
 const Companies = require("../models/companies.models");
 const Articles = require("../models/articles.models");
 const Videos = require("../models/videos.models");
+const CompanyAdmins = require("../models/companyAdmins.models");
 
 class CompaniesServices {
+  // Companies a user may manage: the ones they primarily own (companies.user_id)
+  // PLUS the ones they are a linked admin of (company_admins). Deduplicated.
   static async getOwnedService(userId) {
     try {
-      const companiesOwned = await Companies.findAll({
-        where: {
-          userId: userId,
-        },
+      const owned = await Companies.findAll({ where: { userId } });
+      const links = await CompanyAdmins.findAll({ where: { userId } });
+      const ownedIds = new Set(owned.map((c) => c.id));
+      const extraIds = links
+        .map((l) => l.companyId)
+        .filter((id) => !ownedIds.has(id));
+      const extra = extraIds.length
+        ? await Companies.findAll({ where: { id: extraIds } })
+        : [];
+      const all = [...owned, ...extra];
+      return all.length ? all : false;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // True if the user is the owner OR a linked admin of the company.
+  static async canUserEditCompany(companyId, userId) {
+    try {
+      const company = await Companies.findByPk(companyId);
+      if (!company) return false;
+      if (Number(company.userId) === Number(userId)) return true;
+      const link = await CompanyAdmins.findOne({
+        where: { companyId, userId },
       });
-      if (companiesOwned.length) {
-        return companiesOwned;
-      } else {
-        return false;
-      }
+      return !!link;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // The extra admin user ids linked to a company (never includes the owner).
+  static async listAdminUserIds(companyId) {
+    try {
+      const links = await CompanyAdmins.findAll({ where: { companyId } });
+      return links.map((l) => l.userId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Link a user as an extra admin (idempotent: no duplicate rows).
+  static async addAdminLink(companyId, userId) {
+    try {
+      const [link] = await CompanyAdmins.findOrCreate({
+        where: { companyId, userId },
+        defaults: { companyId, userId },
+      });
+      return link;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Remove an extra-admin link. Returns the number of rows deleted (0 if none).
+  static async removeAdminLink(companyId, userId) {
+    try {
+      return await CompanyAdmins.destroy({ where: { companyId, userId } });
     } catch (error) {
       throw error;
     }

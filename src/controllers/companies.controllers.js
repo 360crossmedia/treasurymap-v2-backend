@@ -1,5 +1,6 @@
 const CompaniesServices = require("../services/companies.service");
 const UsersServices = require("../services/users.services");
+const AuthServices = require("../services/auth.services");
 const { slugify } = require("../utils/slugify");
 
 // Columns a company update is allowed to write. Excludes id / timestamps so a
@@ -107,8 +108,12 @@ const upadateCompanyData = async (req, res, next) => {
     if (!isAdmin) {
       // A vendor may only edit their OWN company, and never the admin-gated
       // fields (live / multiplayer / client package / owner).
-      const company = await CompaniesServices.getCompanyDataService(companyId);
-      if (!company || Number(company.userId) !== Number(req.user && req.user.id)) {
+      // Owner OR a linked extra admin (company_admins) may edit.
+      const canEdit = await CompaniesServices.canUserEditCompany(
+        companyId,
+        req.user && req.user.id
+      );
+      if (!canEdit) {
         return res.status(403).json({ message: "Not allowed to edit this company." });
       }
       data = { ...req.body };
@@ -172,6 +177,98 @@ const companyHasMediaContent = async (req, res, next) => {
   }
 };
 
+// ─────────────── Extra admins (multi-admin per company) ───────────────
+// All three are admin-only (requireAdmin on the routes). They let the master
+// admin give several people edit access to one vendor listing, on top of the
+// single primary owner (companies.user_id).
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// GET /companies/:companyId/admins → owner + linked extra admins, with role.
+const listCompanyAdmins = async (req, res, next) => {
+  try {
+    const { companyId } = req.params;
+    const company = await CompaniesServices.getCompanyDataService(companyId);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    const extraIds = await CompaniesServices.listAdminUserIds(companyId);
+    const ids = [Number(company.userId), ...extraIds.map(Number)];
+    const admins = [];
+    for (const id of ids) {
+      const u = await UsersServices.getUserById(id); // password excluded
+      if (u) {
+        admins.push({
+          id: u.id,
+          email: u.email,
+          fullName: u.fullName,
+          role: Number(id) === Number(company.userId) ? "owner" : "admin",
+        });
+      }
+    }
+    return res.status(200).json(admins);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /companies/:companyId/admins { email, fullName? }
+// Finds or creates the user, links them as an extra admin, and returns a magic
+// edit-link token so the admin can send them an immediate way in.
+const addCompanyAdmin = async (req, res, next) => {
+  try {
+    const { companyId } = req.params;
+    const email = String((req.body && req.body.email) || "").trim().toLowerCase();
+    const fullName =
+      (req.body && req.body.fullName && String(req.body.fullName).trim()) || email;
+    if (!EMAIL_RE.test(email)) {
+      return res.status(400).json({ message: "A valid email is required." });
+    }
+    const company = await CompaniesServices.getCompanyDataService(companyId);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+
+    let user = await UsersServices.getUserIdByEmail(email);
+    let created = false;
+    if (!user) {
+      // New person: create an account with a random password. They get in via
+      // the magic edit link (or Forgot password), so the password is never shown.
+      const password = require("crypto").randomBytes(18).toString("base64url");
+      user = await AuthServices.register({ fullName, email, password });
+      created = true;
+    }
+    if (Number(user.id) === Number(company.userId)) {
+      return res
+        .status(409)
+        .json({ message: "This person is already the owner of this company." });
+    }
+    await CompaniesServices.addAdminLink(companyId, user.id);
+    const token = AuthServices.genMagicToken(user.id);
+    return res.status(200).json({
+      user: { id: user.id, email: user.email, fullName: user.fullName },
+      created,
+      token,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// DELETE /companies/:companyId/admins/:userId → unlink an extra admin.
+const removeCompanyAdmin = async (req, res, next) => {
+  try {
+    const { companyId, userId } = req.params;
+    const company = await CompaniesServices.getCompanyDataService(companyId);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+    if (Number(userId) === Number(company.userId)) {
+      return res.status(400).json({
+        message: "Cannot remove the primary owner. Change the owner instead.",
+      });
+    }
+    const removed = await CompaniesServices.removeAdminLink(companyId, userId);
+    return res.status(200).json({ removed });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCompanyUserOwn,
   createUserCompany,
@@ -181,4 +278,7 @@ module.exports = {
   upadateCompanyData,
   deleteCompany,
   companyHasMediaContent,
+  listCompanyAdmins,
+  addCompanyAdmin,
+  removeCompanyAdmin,
 };
